@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "zrAZy/lMTfM=",
+  "success": true,
+  "projectFilePath": "D:\\source\\Jekyll.Net\\JekyllNet.Cli\\JekyllNet.Cli.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\mysti\\.nuget\\packages\\advancedstringbuilder\\0.2.0\\advancedstringbuilder.0.2.0.nupkg.sha512",
+    "C:\\Users\\mysti\\.nuget\\packages\\dartsasshost\\2.0.2\\dartsasshost.2.0.2.nupkg.sha512",
+    "C:\\Users\\mysti\\.nuget\\packages\\javascriptengineswitcher.core\\3.31.0\\javascriptengineswitcher.core.3.31.0.nupkg.sha512",
+    "C:\\Users\\mysti\\.nuget\\packages\\markdig\\1.1.1\\markdig.1.1.1.nupkg.sha512",
+    "C:\\Users\\mysti\\.nuget\\packages\\system.commandline\\2.0.5\\system.commandline.2.0.5.nupkg.sha512",
+    "C:\\Users\\mysti\\.nuget\\packages\\yamldotnet\\16.3.0\\yamldotnet.16.3.0.nupkg.sha512"
+  ],
+  "logs": []
+}

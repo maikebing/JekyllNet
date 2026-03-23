@@ -1,0 +1,114 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "JekyllNet.Core/1.0.0": {
+        "dependencies": {
+          "DartSassHost": "2.0.2",
+          "Markdig": "1.1.1",
+          "YamlDotNet": "16.3.0"
+        },
+        "runtime": {
+          "JekyllNet.Core.dll": {}
+        }
+      },
+      "AdvancedStringBuilder/0.2.0": {
+        "runtime": {
+          "lib/net10.0/AdvancedStringBuilder.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.0.0"
+          }
+        }
+      },
+      "DartSassHost/2.0.2": {
+        "dependencies": {
+          "JavaScriptEngineSwitcher.Core": "3.31.0"
+        },
+        "runtime": {
+          "lib/net10.0/DartSassHost.dll": {
+            "assemblyVersion": "2.0.2.0",
+            "fileVersion": "2.0.2.0"
+          }
+        }
+      },
+      "JavaScriptEngineSwitcher.Core/3.31.0": {
+        "dependencies": {
+          "AdvancedStringBuilder": "0.2.0"
+        },
+        "runtime": {
+          "lib/net10.0/JavaScriptEngineSwitcher.Core.dll": {
+            "assemblyVersion": "3.31.0.0",
+            "fileVersion": "3.31.0.0"
+          }
+        },
+        "resources": {
+          "lib/net10.0/ru-RU/JavaScriptEngineSwitcher.Core.resources.dll": {
+            "locale": "ru-RU"
+          }
+        }
+      },
+      "Markdig/1.1.1": {
+        "runtime": {
+          "lib/net10.0/Markdig.dll": {
+            "assemblyVersion": "1.1.0.0",
+            "fileVersion": "1.1.1.0"
+          }
+        }
+      },
+      "YamlDotNet/16.3.0": {
+        "runtime": {
+          "lib/net8.0/YamlDotNet.dll": {
+            "assemblyVersion": "16.0.0.0",
+            "fileVersion": "16.3.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "JekyllNet.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AdvancedStringBuilder/0.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-+XOjGvq+4pnmAWLLUimuINKsQTHEqxuA6eDkqUmzIBEsQH1Uz55nGmgVHE6QsocOk1BGnu1janyPeH+cOt00Tg==",
+      "path": "advancedstringbuilder/0.2.0",
+      "hashPath": "advancedstringbuilder.0.2.0.nupkg.sha512"
+    },
+    "DartSassHost/2.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kw+Dq8ZoLgw1zHsOyZkwumzwsIDuTbV8s0OOp6CPWp1Yf0xn5P3NLbRKRKOmXFGvyxIv9yEw5wZTVCA7L3g+Cw==",
+      "path": "dartsasshost/2.0.2",
+      "hashPath": "dartsasshost.2.0.2.nupkg.sha512"
+    },
+    "JavaScriptEngineSwitcher.Core/3.31.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IFniRChO1iFj9umQ32tm7D5+ogtJGNPFwp2opPupo+biqUsBRhr7Vz9GZyGay5wisvFdylmcnFo99gANcOileg==",
+      "path": "javascriptengineswitcher.core/3.31.0",
+      "hashPath": "javascriptengineswitcher.core.3.31.0.nupkg.sha512"
+    },
+    "Markdig/1.1.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-wACpji8aLjtmghzdancNFRDUH66F2kS8QE0uywUXvLHgfbTD7LPNj7Vx43sTckpEQFtn5YndEoZvGqIHosBzGQ==",
+      "path": "markdig/1.1.1",
+      "hashPath": "markdig.1.1.1.nupkg.sha512"
+    },
+    "YamlDotNet/16.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SgMOdxbz8X65z8hraIs6hOEdnkH6hESTAIUa7viEngHOYaH+6q5XJmwr1+yb9vJpNQ19hCQY69xbFsLtXpobQA==",
+      "path": "yamldotnet/16.3.0",
+      "hashPath": "yamldotnet.16.3.0.nupkg.sha512"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="JekyllNet.Cli/JekyllNet.Cli.csproj" />
+  <Project Path="JekyllNet.Core/JekyllNet.Core.csproj" />
+</Solution>

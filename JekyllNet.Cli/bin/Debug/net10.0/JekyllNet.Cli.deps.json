@@ -1,0 +1,187 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "JekyllNet.Cli/1.0.0": {
+        "dependencies": {
+          "JekyllNet.Core": "1.0.0",
+          "System.CommandLine": "2.0.5"
+        },
+        "runtime": {
+          "JekyllNet.Cli.dll": {}
+        }
+      },
+      "AdvancedStringBuilder/0.2.0": {
+        "runtime": {
+          "lib/net10.0/AdvancedStringBuilder.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.0.0"
+          }
+        }
+      },
+      "DartSassHost/2.0.2": {
+        "dependencies": {
+          "JavaScriptEngineSwitcher.Core": "3.31.0"
+        },
+        "runtime": {
+          "lib/net10.0/DartSassHost.dll": {
+            "assemblyVersion": "2.0.2.0",
+            "fileVersion": "2.0.2.0"
+          }
+        }
+      },
+      "JavaScriptEngineSwitcher.Core/3.31.0": {
+        "dependencies": {
+          "AdvancedStringBuilder": "0.2.0"
+        },
+        "runtime": {
+          "lib/net10.0/JavaScriptEngineSwitcher.Core.dll": {
+            "assemblyVersion": "3.31.0.0",
+            "fileVersion": "3.31.0.0"
+          }
+        },
+        "resources": {
+          "lib/net10.0/ru-RU/JavaScriptEngineSwitcher.Core.resources.dll": {
+            "locale": "ru-RU"
+          }
+        }
+      },
+      "Markdig/1.1.1": {
+        "runtime": {
+          "lib/net10.0/Markdig.dll": {
+            "assemblyVersion": "1.1.0.0",
+            "fileVersion": "1.1.1.0"
+          }
+        }
+      },
+      "System.CommandLine/2.0.5": {
+        "runtime": {
+          "lib/net8.0/System.CommandLine.dll": {
+            "assemblyVersion": "2.0.5.0",
+            "fileVersion": "2.0.526.15411"
+          }
+        },
+        "resources": {
+          "lib/net8.0/cs/System.CommandLine.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net8.0/de/System.CommandLine.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net8.0/es/System.CommandLine.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net8.0/fr/System.CommandLine.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net8.0/it/System.CommandLine.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net8.0/ja/System.CommandLine.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net8.0/ko/System.CommandLine.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net8.0/pl/System.CommandLine.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net8.0/pt-BR/System.CommandLine.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net8.0/ru/System.CommandLine.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net8.0/tr/System.CommandLine.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net8.0/zh-Hans/System.CommandLine.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net8.0/zh-Hant/System.CommandLine.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      },
+      "YamlDotNet/16.3.0": {
+        "runtime": {
+          "lib/net8.0/YamlDotNet.dll": {
+            "assemblyVersion": "16.0.0.0",
+            "fileVersion": "16.3.0.0"
+          }
+        }
+      },
+      "JekyllNet.Core/1.0.0": {
+        "dependencies": {
+          "DartSassHost": "2.0.2",
+          "Markdig": "1.1.1",
+          "YamlDotNet": "16.3.0"
+        },
+        "runtime": {
+          "JekyllNet.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "JekyllNet.Cli/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AdvancedStringBuilder/0.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-+XOjGvq+4pnmAWLLUimuINKsQTHEqxuA6eDkqUmzIBEsQH1Uz55nGmgVHE6QsocOk1BGnu1janyPeH+cOt00Tg==",
+      "path": "advancedstringbuilder/0.2.0",
+      "hashPath": "advancedstringbuilder.0.2.0.nupkg.sha512"
+    },
+    "DartSassHost/2.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kw+Dq8ZoLgw1zHsOyZkwumzwsIDuTbV8s0OOp6CPWp1Yf0xn5P3NLbRKRKOmXFGvyxIv9yEw5wZTVCA7L3g+Cw==",
+      "path": "dartsasshost/2.0.2",
+      "hashPath": "dartsasshost.2.0.2.nupkg.sha512"
+    },
+    "JavaScriptEngineSwitcher.Core/3.31.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IFniRChO1iFj9umQ32tm7D5+ogtJGNPFwp2opPupo+biqUsBRhr7Vz9GZyGay5wisvFdylmcnFo99gANcOileg==",
+      "path": "javascriptengineswitcher.core/3.31.0",
+      "hashPath": "javascriptengineswitcher.core.3.31.0.nupkg.sha512"
+    },
+    "Markdig/1.1.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-wACpji8aLjtmghzdancNFRDUH66F2kS8QE0uywUXvLHgfbTD7LPNj7Vx43sTckpEQFtn5YndEoZvGqIHosBzGQ==",
+      "path": "markdig/1.1.1",
+      "hashPath": "markdig.1.1.1.nupkg.sha512"
+    },
+    "System.CommandLine/2.0.5": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2XtWAPk1G6arpe3OCFNrYYuf6iIboznxs2elJSGgd8e0euou7LfGYFon6hBEfDWNtOLr0M3+oUVgy1a5EGa41A==",
+      "path": "system.commandline/2.0.5",
+      "hashPath": "system.commandline.2.0.5.nupkg.sha512"
+    },
+    "YamlDotNet/16.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SgMOdxbz8X65z8hraIs6hOEdnkH6hESTAIUa7viEngHOYaH+6q5XJmwr1+yb9vJpNQ19hCQY69xbFsLtXpobQA==",
+      "path": "yamldotnet/16.3.0",
+      "hashPath": "yamldotnet.16.3.0.nupkg.sha512"
+    },
+    "JekyllNet.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

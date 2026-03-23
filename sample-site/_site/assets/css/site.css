@@ -1,0 +1,16 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+.container {
+    max-width: 880px;
+    margin: 48px auto;
+    padding: 24px;
+}
+
+a {
+    color: #7dd3fc;
+}
