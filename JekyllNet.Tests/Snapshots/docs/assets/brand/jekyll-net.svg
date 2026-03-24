@@ -1,13 +1,35 @@
 <svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="96" height="96" rx="24" fill="url(#paint0_linear)"/>
-  <rect x="10" y="10" width="76" height="76" rx="18" fill="white" fill-opacity="0.16" stroke="white" stroke-opacity="0.24"/>
-  <path d="M28 27H47V35H36V69H28V27Z" fill="white"/>
-  <path d="M52 27H60L69 45V27H77V69H69L60 51V69H52V27Z" fill="white"/>
+  <rect width="96" height="96" rx="24" fill="url(#bg)"/>
+  <rect x="16" y="20" width="46" height="54" rx="12" fill="url(#sheetBack)" stroke="rgba(255,255,255,0.18)"/>
+  <path d="M28 14H62C68.6274 14 74 19.3726 74 26V68C74 74.6274 68.6274 80 62 80H28C21.3726 80 16 74.6274 16 68V26C16 19.3726 21.3726 14 28 14Z" fill="url(#sheetFront)"/>
+  <path d="M62 14L74 26H66C63.7909 26 62 24.2091 62 22V14Z" fill="#D9ECFF"/>
+  <path d="M28 24C28 22.8954 28.8954 22 30 22H40C41.1046 22 42 22.8954 42 24V53.3L35 59L28 53.3V24Z" fill="url(#bookmark)"/>
+  <rect x="47" y="30" width="16" height="4.5" rx="2.25" fill="#2F69FF"/>
+  <rect x="47" y="40" width="19" height="4.5" rx="2.25" fill="#8FB5FF"/>
+  <rect x="28" y="64" width="40" height="4.5" rx="2.25" fill="#D7E7FF"/>
+  <rect x="28" y="54" width="28" height="4.5" rx="2.25" fill="#B8D2FF"/>
+  <path d="M16 58C16 51.3726 21.3726 46 28 46H30V68C30 72.4183 33.5817 76 38 76H62C66.4183 76 70 72.4183 70 68V66H74V68C74 74.6274 68.6274 80 62 80H28C21.3726 80 16 74.6274 16 68V58Z" fill="url(#bottomGlow)" fill-opacity="0.34"/>
   <defs>
-    <linearGradient id="paint0_linear" x1="11" y1="13" x2="84" y2="87" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3C65F8"/>
-      <stop offset="0.56" stop-color="#3750FF"/>
+    <linearGradient id="bg" x1="10" y1="10" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D5BFF"/>
+      <stop offset="0.56" stop-color="#397BFF"/>
+      <stop offset="1" stop-color="#1FB7A6"/>
+    </linearGradient>
+    <linearGradient id="sheetFront" x1="22" y1="18" x2="68" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F4F9FF"/>
+    </linearGradient>
+    <linearGradient id="sheetBack" x1="18" y1="22" x2="62" y2="74" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9FC5FF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#B9FFF3" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="bookmark" x1="28" y1="22" x2="42" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8B4A"/>
       <stop offset="1" stop-color="#F35F20"/>
+    </linearGradient>
+    <linearGradient id="bottomGlow" x1="16" y1="46" x2="74" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#B7FFF1"/>
     </linearGradient>
   </defs>
 </svg>

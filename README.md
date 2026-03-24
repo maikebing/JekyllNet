@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/brand/jekyll-net-lockup.svg" alt="JekyllNet" width="360">
+</p>
+
 # JekyllNet ✨
 
 一个用 C# 编写的 Jekyll 风格静态站点生成器，目标是逐步靠近 GitHub Pages 行为。
@@ -9,6 +13,10 @@
 变更记录见：
 
 `CHANGELOG.md`
+
+GitHub 头像建议使用：
+
+`docs/assets/brand/jekyll-net-avatar.svg`
 
 ## 🚀 当前能力
 
