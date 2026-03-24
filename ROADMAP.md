@@ -1,14 +1,14 @@
 # Jekyll.Net Roadmap
 
-`Jekyll.Net` 的目标不是做一个“随便能出 HTML 的静态站点生成器”，而是逐步向 **Jekyll / GitHub Pages 常用行为** 靠拢，同时保持 .NET 代码库可维护、可测试、可迭代。
+`Jekyll.Net` 的目标不是做一个“能生成 HTML 就算完成”的静态站点生成器，而是逐步补齐 **Jekyll / GitHub Pages 常用行为**，同时保持 .NET 代码库可维护、可测试、可迭代。
 
-这份路线图分成三部分：
+这次重新梳理路线图，核心不是再加更多想法，而是把事情分清楚：
 
-1. 当前已经具备什么
-2. 目前还缺什么，为什么缺
-3. 下一步按什么顺序补
+1. 什么是必须先补齐的核心兼容闭环
+2. 什么是能显著提升开发效率的工程化工作
+3. 什么是值得保留、但不应该打断主线的远期探索
 
-参考基线主要来自 Jekyll 官方文档中对 front matter、front matter defaults、variables、collections、includes、rendering process 等行为的定义：
+参考基线主要来自 Jekyll 官方文档中对 front matter、variables、collections、includes、rendering process 等行为定义：
 
 - Front Matter Defaults: https://jekyllrb.com/docs/configuration/front-matter-defaults/
 - Front Matter: https://jekyllrb.com/docs/front-matter/
@@ -17,10 +17,11 @@
 - Collections: https://jekyllrb.com/docs/collections/
 - Rendering Process: https://jekyllrb.com/docs/rendering-process/
 
-## Current Status
+## 当前基线
 
-当前仓库已经覆盖：
+当前仓库已经验证可用的能力：
 
+- `build` 命令可生成 `sample-site` 与 `docs`
 - `_config.yml`
 - YAML Front Matter
 - Markdown 转 HTML
@@ -39,137 +40,123 @@
   - 支持简单 `*` glob
   - front matter 显式值优先于 defaults
 
-## Gap Analysis
+当前代码里已经预留、但还没有真正接到构建流程上的能力：
 
-### 1. 渲染引擎语义还不完整
+- `IncludeDrafts`
+- `IncludeFuture`
+- `IncludeUnpublished`
+- `PostsPerPage`
 
-这是当前最核心的缺口，因为很多“页面能不能像 Jekyll 一样工作”最终都卡在这里。
+## 这次路线图调整的结论
 
-主要问题：
+### 1. 主线要从“功能罗列”改成“兼容闭环”
 
-- `assign` 的作用域还不符合 Liquid 预期
-  - 例如 header/footer 这种“先 assign，再在后文消费”的模板，目前只能通过改模板绕开。
-- include 的展开时机还太早
-  - 条件块里的 include 也会先展开，容易把不该渲染的模板碎片带出来。
-- `if/for` 的实现仍偏正则驱动
-  - 对复杂嵌套块、连续块、块内再嵌套块的稳定性不足。
-- 还缺少 `capture`、`unless`、`case/when`、`contains` 等常见控制语法。
+接下来最重要的不是继续扩很多外围能力，而是先把下面这条主线做完整：
 
-结论：
+1. 建立回归基线
+2. 补稳 Liquid 语义
+3. 补齐站点内容语义
+4. 扩展高价值 filters
+5. 输出清晰的 GitHub Pages 兼容边界
 
-这部分是后面继续补 filter、补站点变量、补复杂模板前的地基。
+### 2. 测试要前移，而不是放到最后
 
-### 2. 站点建模与 Jekyll 还有一段差距
+以前的路线图把测试放在比较后面，但从当前仓库状态看，后面几项核心工作都要改渲染器和构建流程。  
+如果没有固定回归样本，越往后改，风险越大。
 
-主要问题：
+所以新的顺序应该是：
 
-- nested `index.md` 的默认 permalink 行为还不够像 Jekyll
-- `drafts / future / unpublished` 还没做
-- excerpts / `excerpt_separator` 还没做
-- pagination 还没做
-- 静态文件 front matter 与 defaults 还没对齐
-- `_config.yml` 的更多配置项还没落实到构建流程
+1. 先把 `docs` 和 `sample-site` 固定成回归样本
+2. 再动 `assign` / `include` / `if` / `for` / permalink
 
-结论：
+### 3. 远期想法保留，但不进入核心关键路径
 
-这部分决定“一个真实项目站点能不能平移过来”。
+下面这些方向都值得保留：
 
-### 3. Liquid / Jekyll filters 覆盖还偏薄
+- `serve/watch`
+- `dotnet tool`
+- GitHub Action
+- `winget`
+- VS Code / VS 预览体验
+- `new -t` 模版初始化
+- 模版商店
+- 文档编辑器 + AI 翻译
+- `md/pdf/word` 双向转换
 
-当前只实现了一小部分常见 filters，距离真实项目模板常用集合还有差距。
+但它们不应该打断当前“先把 Jekyll/GitHub Pages 兼容主干补稳”的主线。
 
-优先缺口：
+## 核心路线图
 
-- `relative_url`
-- `absolute_url`
-- `markdownify`
-- `replace_first`
-- `where`
-- `sort`
-- `map`
-- `compact`
-- `jsonify`
-- `slugify`
+### Phase 0: 回归基线先立住
 
-结论：
+目标：在继续补兼容细节前，先让后续改动变得可验证。
 
-这部分决定“模板能不能少改甚至不改”。
+- [x] 增加自动化测试项目
+- [x] 为 `sample-site` 增加 golden output / snapshot fixture
+- [x] 为 `docs` 增加 golden output / snapshot fixture
+- [x] 增加面向 Liquid 语义的小型 fixture
+  - `assign`
+  - 条件块中的 `include`
+  - 嵌套 `if/for`
+  - nested `index.md` permalink
+- [ ] 增加固定回归命令与文档
 
-### 4. GitHub Pages 兼容层还不够系统
+完成标准：
 
-主要问题：
+- 每次改渲染器后，都能快速知道 `docs` / `sample-site` 有没有回归
+- 后续 Phase 1 和 Phase 2 的改动可以放心推进
 
-- 还没有一份清晰的 GitHub Pages 兼容矩阵
-- 缺少对官方常用插件行为边界的整理
-- 缺少更接近真实站点的回归样本
+### Phase 1: Liquid 语义校正
 
-结论：
+目标：先把模板引擎从“能跑一部分模板”提升到“能稳定支撑文档站与简单主题”。
 
-这部分决定“兼容 GitHub Pages”到底是口号，还是可验证的目标。
-
-### 5. 开发体验和回归验证还需要补
-
-主要问题：
-
-- 目前缺少系统化测试
-- 缺少 golden output / snapshot fixture
-- 还没有 `serve/watch` 工作流
-- 缺少针对 docs/sample-site 的固定回归命令
-
-结论：
-
-这部分决定后续迭代速度和信心。
-
-## Step-by-Step Plan
-
-### Phase 1: 引擎语义校正
-
-目标：先把 Liquid 渲染流程从“能跑一些模板”提升到“能稳定跑文档站模板”。
-
-- [x] 支持 `_config.yml defaults`
 - [ ] 重做 `assign` 作用域
-- [ ] 修正 include 在条件块中的展开顺序
-- [ ] 让 `if/for` 支持更稳定的嵌套块处理
-- [ ] 增加 `capture / unless / case / contains`
-- [ ] 修正 nested `index.md` 的默认 permalink 推导
+- [ ] 修正 `include` 在条件块中的展开顺序
+- [x] 让 `if/for` 支持更稳定的嵌套块处理
+- [x] 增加 `capture`
+- [x] 增加 `unless`
+- [x] 增加 `case/when`
+- [x] 增加 `contains`
 
-建议顺序：
+完成标准：
 
-1. `assign` + include 顺序
-2. 块语法嵌套稳定性
-3. nested index/permalink
+- `docs` 站点中的模板不再依赖规避性写法
+- `include` 不会在不应渲染时提前展开
+- 复杂块结构可以稳定通过 fixture
 
-### Phase 2: 内容语义补齐
+### Phase 2: 站点与内容语义补齐
 
-目标：让项目能更像真正的 Jekyll 内容管线。
+目标：让真实站点更容易平移到 `Jekyll.Net`。
 
-- [ ] `drafts`
-- [ ] `future`
-- [ ] `unpublished`
-- [ ] excerpts / `excerpt_separator`
-- [ ] static files 的 front matter 与 defaults
-- [ ] 更完整的 `_config.yml` 站点级选项落地
+- [x] 修正 nested `index.md` 的默认 permalink 推导
+- [x] 接通 `drafts`
+- [x] 接通 `future`
+- [x] 接通 `unpublished`
+- [ ] 支持 excerpts / `excerpt_separator`
+- [ ] 补齐 static files 的 front matter 与 defaults
+- [ ] 补齐更多 `_config.yml` 站点级选项到构建流程
+- [ ] 评估并接通 pagination
 
-建议顺序：
+完成标准：
 
-1. drafts / future / unpublished
-2. excerpt
-3. static file metadata
+- 页面与文章的默认 URL 行为更接近 Jekyll
+- 文章发布状态控制不再只是选项占位
+- 内容建模能力足够覆盖中小型真实站点
 
-### Phase 3: Liquid / Filters 扩展
+### Phase 3: 高价值 Filters 补齐
 
-目标：减少现有主题和项目模板的迁移成本。
+目标：减少现有 Jekyll 模版迁移时的改动量。
 
-- [ ] `relative_url`
-- [ ] `absolute_url`
-- [ ] `markdownify`
-- [ ] `replace_first`
-- [ ] `where`
-- [ ] `sort`
-- [ ] `map`
-- [ ] `compact`
-- [ ] `jsonify`
-- [ ] `slugify`
+- [x] `relative_url`
+- [x] `absolute_url`
+- [x] `markdownify`
+- [x] `replace_first`
+- [x] `where`
+- [x] `sort`
+- [x] `map`
+- [x] `compact`
+- [x] `jsonify`
+- [x] `slugify`
 
 建议顺序：
 
@@ -177,42 +164,68 @@
 2. 集合类 filters
 3. 内容类 filters
 
-### Phase 4: GitHub Pages 兼容层
+完成标准：
 
-目标：把“兼容 GitHub Pages”从经验判断变成明确边界。
+- 现有模板里对 `prepend: site.baseurl` 之类的替代写法可以开始减少
+- 一批常见主题片段可以更低成本迁移
 
-- [ ] 整理 GitHub Pages 常用特性兼容清单
-- [ ] 补一批 Pages 风格 fixture site
+### Phase 4: GitHub Pages 兼容层明确化
+
+目标：把“兼容 GitHub Pages”从经验判断变成可说明、可验证的边界。
+
+- [ ] 整理 GitHub Pages 常用特性兼容矩阵
 - [ ] 标记“已兼容 / 部分兼容 / 未兼容”
-- [ ] 对 docs、sample-site、最小 blog fixture 做回归
+- [ ] 增加更接近真实 Pages 站点的 fixture
+- [ ] 对 `docs`、`sample-site`、最小 blog fixture 做固定回归
+- [ ] 在文档中公开当前兼容边界与已知限制
 
-### Phase 5: 工程化与开发体验
+完成标准：
 
-目标：让后续完善进入可持续迭代状态。
+- 外部使用者能快速判断项目是否适合自己的站点
+- 我们自己也能明确知道下一步是在补什么缺口
 
-- [ ] 增加自动化测试项目
-- [ ] 增加 golden output 对比
+## 第二优先级：工程化与开发体验
+
+这一层很重要，但应该建立在核心兼容主线逐步稳定的基础上。
+
+### DevEx 方向
+
 - [ ] 增加 `serve/watch`
-- [ ] 增加回归命令和文档
+- [ ] 在 CLI 中暴露 `drafts / future / unpublished / pagination` 相关开关
+- [ ] 增加固定回归命令
+- [ ] 支持 `dotnet tool`
+- [ ] 提供 GitHub Action 构建样例
 
-## Immediate Next Milestones
+### Distribution 方向
 
-如果按投入产出比排序，下一轮最值得优先做的是：
+- [ ] 支持 `winget`
+- [ ] 补安装与升级文档
 
-1. `assign` 作用域与 include 渲染顺序
-2. nested `index.md` 默认 permalink
-3. `relative_url / absolute_url / markdownify`
-4. drafts / future / unpublished
-5. golden output 回归测试
-6. 加入单元测试， 对大量解析案例进行测试用例。
-7. 支持GitHub Pages 的 构建， 比如项目生成一个GitHub Action 供第三方使用。 
-8. 支持VS Code 预览 比如打开了http://localhost:4004 然后本地查看生成后的效果。 
-9. 可以实施生成， 边写边预览生成的效果。 程序监测到文件变化就生成。 可以配置， 生成间隔 ， 或者立刻生成。 
-10. 支持 dotnet tool ， 可以安装为工具。 
-11. 支持winget 安装
-12. 支持VS2026 预览  编译时构建。 如果可能支持vs浏览器扩展， 可以编写文档， 边预览。 
-13. 实现一个文档编辑器， 编辑器里面可以设置AI翻译， 可以从主写语言自动翻译为其他语言。还要能实时预览。 
-14. 支持命令行 new  -t 指定模版， 可以自动从模版仓库下载模版。 其他人可以在github上同步模版， gitee上自动同步。 new的时候程序自动从这俩库取， 能访问到谁就从谁哪取模版。 
-15. 我们的模版上需要有模版商店。 来展示上面说到的仓库里的案例。 
-16. 让我们把md to pdf , md to word  , pdf to md , word to md 都要实现， 包括里面包含的图标也要取出来。 如果pdf是全图片， 则使用ocr进行识别。 
-  
+## 远期探索 Backlog
+
+这些方向可以继续保留，但建议明确标成“远期探索”，不要和核心兼容任务混在一个优先级里：
+
+- [ ] VS Code 本地预览体验增强
+- [ ] Visual Studio 预览/构建期集成
+- [ ] `new -t` 模版初始化
+- [ ] 模版仓库同步与模版商店
+- [ ] 文档编辑器与 AI 翻译工作流
+- [ ] `md -> pdf`
+- [ ] `md -> word`
+- [ ] `pdf -> md`
+- [ ] `word -> md`
+- [ ] 图片抽取与 OCR 支持
+
+## 现在最该做的事
+
+如果只看接下来一到两轮迭代，优先级建议明确收敛到这 5 件事：
+
+1. 建立 `docs` + `sample-site` 的 golden output 回归基线
+2. 重做 `assign` 作用域与 `include` 渲染顺序
+3. 稳定 `if/for` 嵌套块处理，并补 `capture / unless / case / contains`
+4. 修正 nested `index.md` permalink，并接通 `drafts / future / unpublished`
+5. 补 `relative_url / absolute_url / markdownify`
+
+一句话总结：
+
+先把 **回归基线 + Liquid 语义 + 内容语义 + 核心 filters** 这条主干打通，再考虑安装分发、编辑器、模版生态和格式转换。

@@ -14,10 +14,22 @@ var destinationOption = new Option<DirectoryInfo?>("--destination")
 };
 destinationOption.Description = "Build output directory";
 
+var draftsOption = new Option<bool>("--drafts");
+draftsOption.Description = "Include content from _drafts";
+
+var futureOption = new Option<bool>("--future");
+futureOption.Description = "Include content dated in the future";
+
+var unpublishedOption = new Option<bool>("--unpublished");
+unpublishedOption.Description = "Include content with published: false";
+
 var buildCommand = new Command("build", "Build a Jekyll-compatible site")
 {
 	sourceOption,
-	destinationOption
+	destinationOption,
+	draftsOption,
+	futureOption,
+	unpublishedOption
 };
 
 buildCommand.SetAction(async parseResult =>
@@ -29,7 +41,10 @@ buildCommand.SetAction(async parseResult =>
 	await builder.BuildAsync(new JekyllSiteOptions
 	{
 		SourceDirectory = source,
-		DestinationDirectory = destination
+		DestinationDirectory = destination,
+		IncludeDrafts = parseResult.GetValue(draftsOption),
+		IncludeFuture = parseResult.GetValue(futureOption),
+		IncludeUnpublished = parseResult.GetValue(unpublishedOption)
 	});
 
 	parseResult.InvocationConfiguration.Output.WriteLine($"Build complete: {destination}");

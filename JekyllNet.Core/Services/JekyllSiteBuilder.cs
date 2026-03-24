@@ -103,7 +103,11 @@ public sealed class JekyllSiteBuilder
             var text = await File.ReadAllTextAsync(file, cancellationToken);
             var document = _frontMatterParser.Parse(text);
             var frontMatter = ApplyFrontMatterDefaults(relativePath, document.FrontMatter, siteConfig, collectionDefinitions, options);
-            result.Add(CreateContentItem(file, relativePath, frontMatter, document.Content, collectionDefinitions, options));
+            var item = CreateContentItem(file, relativePath, frontMatter, document.Content, collectionDefinitions, options);
+            if (ShouldIncludeItem(item, options))
+            {
+                result.Add(item);
+            }
         }
 
         return result;
@@ -117,9 +121,10 @@ public sealed class JekyllSiteBuilder
         HashSet<string> collections,
         JekyllSiteOptions options)
     {
-        var isPost = relativePath.StartsWith(options.Compatibility.PostsDirectoryName + "/", StringComparison.OrdinalIgnoreCase);
+        var isDraft = relativePath.StartsWith("_drafts/", StringComparison.OrdinalIgnoreCase);
+        var isPost = isDraft || relativePath.StartsWith(options.Compatibility.PostsDirectoryName + "/", StringComparison.OrdinalIgnoreCase);
         var collection = ResolveCollectionName(relativePath, isPost, collections);
-        var date = ResolveDate(relativePath, frontMatter, isPost);
+        var date = ResolveDate(relativePath, frontMatter, isPost, isDraft);
         var url = ResolvePermalink(relativePath, frontMatter, date, collection, isPost);
         var tags = ReadStringList(frontMatter, "tags");
         var categories = ReadStringList(frontMatter, "categories");
@@ -132,6 +137,7 @@ public sealed class JekyllSiteBuilder
             RawContent = rawContent,
             Collection = collection,
             IsPost = isPost,
+            IsDraft = isDraft,
             Date = date,
             Tags = tags,
             Categories = categories,
@@ -561,7 +567,7 @@ public sealed class JekyllSiteBuilder
         return string.Empty;
     }
 
-    private static DateTimeOffset? ResolveDate(string relativePath, Dictionary<string, object?> frontMatter, bool isPost)
+    private static DateTimeOffset? ResolveDate(string relativePath, Dictionary<string, object?> frontMatter, bool isPost, bool isDraft)
     {
         if (frontMatter.TryGetValue("date", out var dateValue) && dateValue is not null
             && DateTimeOffset.TryParse(dateValue.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsedFrontMatterDate))
@@ -572,13 +578,14 @@ public sealed class JekyllSiteBuilder
         if (isPost)
         {
             var fileName = Path.GetFileNameWithoutExtension(relativePath);
-            if (fileName.Length >= 10 && DateTimeOffset.TryParseExact(fileName[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsedPostDate))
+            if (HasDatePrefix(fileName)
+                && DateTimeOffset.TryParseExact(fileName[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsedPostDate))
             {
                 return parsedPostDate;
             }
         }
 
-        return null;
+        return isDraft ? DateTimeOffset.UtcNow : null;
     }
 
     private static string ResolvePermalink(string relativePath, Dictionary<string, object?> frontMatter, DateTimeOffset? date, string collection, bool isPost)
@@ -591,7 +598,7 @@ public sealed class JekyllSiteBuilder
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
         if (isPost)
         {
-            var slug = fileNameWithoutExtension.Length > 11 ? fileNameWithoutExtension[11..] : fileNameWithoutExtension;
+            var slug = ResolveSlug(relativePath);
             var resolvedDate = date ?? DateTimeOffset.MinValue;
             return $"/{resolvedDate:yyyy}/{resolvedDate:MM}/{resolvedDate:dd}/{slug}/";
         }
@@ -603,7 +610,10 @@ public sealed class JekyllSiteBuilder
 
         if (string.Equals(fileNameWithoutExtension, "index", StringComparison.OrdinalIgnoreCase))
         {
-            return "/";
+            var directory = Path.GetDirectoryName(relativePath)?.Replace('\\', '/').Trim('/');
+            return string.IsNullOrWhiteSpace(directory)
+                ? "/"
+                : $"/{directory}/";
         }
 
         return $"/{fileNameWithoutExtension}/";
@@ -611,8 +621,7 @@ public sealed class JekyllSiteBuilder
 
     private static string NormalizePermalink(string permalink, string relativePath, DateTimeOffset? date, string collection)
     {
-        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
-        var slug = fileNameWithoutExtension.Length > 11 ? fileNameWithoutExtension[11..] : fileNameWithoutExtension;
+        var slug = ResolveSlug(relativePath);
         var resolvedDate = date ?? DateTimeOffset.MinValue;
 
         var replaced = permalink
@@ -635,6 +644,51 @@ public sealed class JekyllSiteBuilder
         }
 
         return replaced;
+    }
+
+    private static bool ShouldIncludeItem(JekyllContentItem item, JekyllSiteOptions options)
+    {
+        if (item.IsDraft && !options.IncludeDrafts)
+        {
+            return false;
+        }
+
+        if (!options.IncludeUnpublished
+            && item.FrontMatter.TryGetValue("published", out var publishedValue)
+            && TryConvertToBoolean(publishedValue) is false)
+        {
+            return false;
+        }
+
+        if (!options.IncludeFuture
+            && item.Date is { } date
+            && date > DateTimeOffset.UtcNow)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool? TryConvertToBoolean(object? value)
+    {
+        return value switch
+        {
+            bool boolValue => boolValue,
+            string text when bool.TryParse(text, out var parsed) => parsed,
+            _ => null
+        };
+    }
+
+    private static bool HasDatePrefix(string fileName)
+        => fileName.Length > 11
+           && fileName[10] == '-'
+           && DateTimeOffset.TryParseExact(fileName[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out _);
+
+    private static string ResolveSlug(string relativePath)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(relativePath);
+        return HasDatePrefix(fileName) ? fileName[11..] : fileName;
     }
 
     private static string UrlToOutputPath(string url)

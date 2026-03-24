@@ -14,6 +14,8 @@ public sealed class JekyllContentItem
 
     public bool IsPost { get; init; }
 
+    public bool IsDraft { get; init; }
+
     public DateTimeOffset? Date { get; set; }
 
     public List<string> Tags { get; init; } = [];

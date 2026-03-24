@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jekyll.Net Home | Jekyll.Net</title>
+  <meta name="description" content="A Jekyll-style static site generator written in C# and aimed at GitHub Pages compatibility.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/Jekyll.Net/assets/css/site.css">
+</head>
+
+  <body class="site-shell">
+    <div class="site-backdrop" aria-hidden="true"></div>
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+<header class="site-header">
+  <div class="container header-shell">
+    <div class="header-start">
+      <a class="brand" href="/Jekyll.Net/en/">
+        <span class="brand-mark">
+          <img src="/Jekyll.Net/assets/brand/jekyll-net.svg" alt="Jekyll.Net logo">
+        </span>
+        <span class="brand-copy">
+          <strong>Jekyll.Net</strong>
+          <small>GitHub Pages docs for the project</small>
+        </span>
+      </a>
+
+      <div class="lang-switch" aria-label="Language">
+        <a href="/Jekyll.Net/zh/" class="">中文</a>
+        <a href="/Jekyll.Net/en/" class="is-active">EN</a>
+      </div>
+    </div>
+
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="/Jekyll.Net/en/navigation/" class="is-active">Docs</a>
+      <a href="/Jekyll.Net/en/news/" class="">News</a>
+      <a href="/Jekyll.Net/en/blog/" class="">Blog</a>
+
+      <details class="nav-menu">
+        <summary>Source</summary>
+        <div class="nav-menu-panel">
+          <a href="https://github.com/IoTSharp/Jekyll.Net" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/IoTSharp/Jekyll.Net/blob/main/README.md" target="_blank" rel="noreferrer">README</a>
+          <a href="https://github.com/IoTSharp/Jekyll.Net/tree/main/sample-site" target="_blank" rel="noreferrer">sample-site</a>
+        </div>
+      </details>
+
+      <a href="/Jekyll.Net/en/about/" class="">About</a>
+    </nav>
+  </div>
+</header>
+
+
+    <main class="site-main">
+      <div class="container">
+        
+  <section class="hero-shell">
+    <div class="hero-main panel">
+      <p class="eyebrow">GitHub Pages · Jekyll-compatible · .NET 10</p>
+      <h1>A .NET static site generator moving toward GitHub Pages behavior</h1>
+      <div class="hero-copy">
+        <p>Jekyll.Net is built with C# and .NET 10 and is gradually filling in the core pieces most project documentation sites need: Front Matter, Layouts, Includes, Collections, Tags, Categories, and Sass.</p>
+      </div>
+
+      <div class="hero-actions">
+        <a class="button button-primary" href="/Jekyll.Net/en/navigation/">Start reading</a>
+        <a class="button button-secondary" href="https://github.com/IoTSharp/Jekyll.Net/tree/main/sample-site">Browse sample-site</a>
+        <a class="button button-secondary" href="https://github.com/IoTSharp/Jekyll.Net/blob/main/README.md">Read README</a>
+      </div>
+
+      <ul class="tag-row" aria-label="Highlights">
+        
+          <li>.NET 10</li>
+        
+          <li>GitHub Pages</li>
+        
+          <li>Jekyll-style</li>
+        
+          <li>Markdown + Sass</li>
+        
+      </ul>
+    </div>
+
+    <aside class="hero-side">
+      <section class="panel code-panel">
+        <p class="panel-label">Quick Start</p>
+        <pre><code>dotnet run --project .\JekyllNet.Cli -- build --source .\sample-site
+</code></pre>
+      </section>
+
+      <section class="panel note-panel">
+        <h2>In one sentence</h2>
+        <div class="note-copy">
+          <p>This project is not wrapping Jekyll itself. It is rebuilding a GitHub-Pages-style static generation path in C# piece by piece.</p>
+        </div>
+      </section>
+    </aside>
+  </section>
+
+
+
+  <section class="stats-grid">
+    
+      <div class="panel stat-card">
+        <span class="stat-label">Runtime</span>
+        <strong class="stat-value">.NET 10</strong>
+      </div>
+    
+      <div class="panel stat-card">
+        <span class="stat-label">Current entry</span>
+        <strong class="stat-value">CLI build</strong>
+      </div>
+    
+      <div class="panel stat-card">
+        <span class="stat-label">Site features</span>
+        <strong class="stat-value">Markdown + Liquid subset</strong>
+      </div>
+    
+      <div class="panel stat-card">
+        <span class="stat-label">Direction</span>
+        <strong class="stat-value">Closer to GitHub Pages</strong>
+      </div>
+    
+  </section>
+
+
+
+  <section class="content-section ">
+    <header class="section-header">
+      <h2>What already works</h2>
+      <div class="section-copy">
+        <p>The repository already covers the core pieces needed by a small GitHub Pages style documentation site.</p>
+      </div>
+    </header>
+
+    
+      <div class="card-grid section-columns-3">
+        
+          <article class="panel info-card">
+            <h3>Content parsing</h3>
+            <div class="card-copy">
+              <p>Supports _config.yml, YAML Front Matter, Markdown to HTML, and a basic set of tags and filters.</p>
+            </div>
+          </article>
+        
+          <article class="panel info-card">
+            <h3>Templating</h3>
+            <div class="card-copy">
+              <p>Supports _layouts, nested layouts, _includes, _data, and output-enabled collections.</p>
+            </div>
+          </article>
+        
+          <article class="panel info-card">
+            <h3>Site assets</h3>
+            <div class="card-copy">
+              <p>Supports Sass or SCSS compilation and copies static assets into the _site output directory.</p>
+            </div>
+          </article>
+        
+      </div>
+    
+
+    
+
+    
+  </section>
+
+  <section class="content-section ">
+    <header class="section-header">
+      <h2>Recommended entry points</h2>
+      <div class="section-copy">
+        <p>If this is your first time in the repository, these are the fastest useful pages to open.</p>
+      </div>
+    </header>
+
+    
+
+    
+      <div class="card-grid section-columns-4">
+        
+          <a class="panel quick-card" href="/Jekyll.Net/en/navigation/">
+            <strong>Documentation map</strong>
+            <div class="card-copy">
+              <p>Pick the page that matches your goal.</p>
+            </div>
+          </a>
+        
+          <a class="panel quick-card" href="/Jekyll.Net/en/getting-started/">
+            <strong>Getting started</strong>
+            <div class="card-copy">
+              <p>Build the sample site once and inspect the output.</p>
+            </div>
+          </a>
+        
+          <a class="panel quick-card" href="/Jekyll.Net/en/github-pages/">
+            <strong>GitHub Pages</strong>
+            <div class="card-copy">
+              <p>See how the new docs folder is meant to be published.</p>
+            </div>
+          </a>
+        
+          <a class="panel quick-card" href="/Jekyll.Net/en/compatibility/">
+            <strong>Compatibility</strong>
+            <div class="card-copy">
+              <p>Understand what is already implemented and what is still missing.</p>
+            </div>
+          </a>
+        
+      </div>
+    
+
+    
+  </section>
+
+  <section class="content-section panel panel-section">
+    <header class="section-header">
+      <h2>The shortest path</h2>
+      <div class="section-copy">
+        <p>If you only want a quick read of the current project state, use this path.</p>
+      </div>
+    </header>
+
+    
+
+    
+
+    
+      <ul class="stack-list">
+        
+          <li>
+            <a href="https://github.com/IoTSharp/Jekyll.Net/blob/main/README.md">Start with README to confirm the project goals and limits</a>
+            <span>The repository front page already lists the main capability boundaries.</span>
+          </li>
+        
+          <li>
+            <a href="/Jekyll.Net/en/getting-started/">Run one build with sample-site</a>
+            <span>Inspect the generated _site output directly.</span>
+          </li>
+        
+          <li>
+            <a href="/Jekyll.Net/en/navigation/">Open the documentation map and follow the page that matches your goal</a>
+            <span>Docs, compatibility, and Pages setup all branch from there.</span>
+          </li>
+        
+      </ul>
+    
+  </section>
+
+
+
+
+      </div>
+    </main>
+
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <section>
+      <h2>Jekyll.Net</h2>
+      <p>A GitHub Pages source site for Jekyll.Net, focused on project overview, quick start, compatibility scope, and docs navigation.</p>
+    </section>
+
+    <section>
+      <h2>Docs</h2>
+      <ul>
+        <li><a href="/Jekyll.Net/en/navigation/">Documentation map</a></li>
+        <li><a href="/Jekyll.Net/en/getting-started/">Getting started</a></li>
+        <li><a href="/Jekyll.Net/en/github-pages/">GitHub Pages setup</a></li>
+        <li><a href="/Jekyll.Net/en/news/">News</a></li>
+        <li><a href="/Jekyll.Net/en/blog/">Blog</a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Project</h2>
+      <ul>
+        <li><a href="https://github.com/IoTSharp/Jekyll.Net">GitHub</a></li>
+        <li><a href="https://github.com/IoTSharp/Jekyll.Net/blob/main/README.md">README</a></li>
+        <li><a href="https://github.com/IoTSharp/Jekyll.Net/tree/main/sample-site">sample-site</a></li>
+      </ul>
+    </section>
+  </div>
+</footer>
+
+  </body>
+</html>

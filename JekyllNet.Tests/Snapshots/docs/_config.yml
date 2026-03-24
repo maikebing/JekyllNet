@@ -1,0 +1,12 @@
+title: Jekyll.Net
+description: GitHub Pages style documentation site for the Jekyll.Net project.
+lang: zh-CN
+timezone: Asia/Shanghai
+baseurl: "/Jekyll.Net"
+markdown: kramdown
+show_excerpts: false
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
