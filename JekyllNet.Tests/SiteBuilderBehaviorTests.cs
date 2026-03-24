@@ -601,6 +601,166 @@ public sealed class SiteBuilderBehaviorTests
     }
 
     [Fact]
+    public async Task Build_ReusesAiTranslationCacheAcrossBuilds()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                lang: en
+                ai:
+                  provider: openai
+                  model: gpt-5-mini
+                  api_key: test-key
+                  translate:
+                    targets:
+                      - fr
+                    front_matter_keys:
+                      - title
+                """,
+            ["_layouts/default.html"] = """
+                <html>
+                <body>
+                <h1>{{ page.title }}</h1>
+                {{ content }}
+                </body>
+                </html>
+                """,
+            ["index.md"] = """
+                ---
+                layout: default
+                title: Hello
+                lang: en
+                ---
+                Welcome
+                """
+        });
+
+        var client = new FakeAiTranslationClient();
+
+        await TestInfrastructure.BuildSiteAsync(sourceDirectory, aiTranslationClient: client);
+        var initialCallCount = client.CallCount;
+        await TestInfrastructure.BuildSiteAsync(sourceDirectory, aiTranslationClient: client);
+
+        Assert.Equal(9, initialCallCount);
+        Assert.Equal(initialCallCount, client.CallCount);
+        Assert.True(File.Exists(Path.Combine(sourceDirectory, ".jekyllnet", "translation-cache.json")));
+    }
+
+    [Fact]
+    public async Task Build_OnlyRetranslatesChangedContent_WhenAiTranslationCacheExists()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                lang: en
+                ai:
+                  provider: openai
+                  model: gpt-5-mini
+                  api_key: test-key
+                  translate:
+                    targets:
+                      - fr
+                    front_matter_keys:
+                      - title
+                """,
+            ["_layouts/default.html"] = """
+                <html>
+                <body>
+                <h1>{{ page.title }}</h1>
+                {{ content }}
+                </body>
+                </html>
+                """,
+            ["index.md"] = """
+                ---
+                layout: default
+                title: Hello
+                lang: en
+                ---
+                Welcome
+                """
+        });
+
+        var client = new FakeAiTranslationClient();
+
+        await TestInfrastructure.BuildSiteAsync(sourceDirectory, aiTranslationClient: client);
+        var initialCallCount = client.CallCount;
+
+        File.WriteAllText(
+            Path.Combine(sourceDirectory, "index.md"),
+            """
+            ---
+            layout: default
+            title: Hello
+            lang: en
+            ---
+            Updated welcome
+            """);
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory, aiTranslationClient: client);
+        var translatedOutput = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "fr", "index.html"));
+
+        Assert.Equal(9, initialCallCount);
+        Assert.Equal(initialCallCount + 1, client.CallCount);
+        Assert.Contains("fr::Hello", translatedOutput, StringComparison.Ordinal);
+        Assert.Contains("fr::Updated welcome", translatedOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Build_LoadsGlossaryEntriesForAiTranslationRequests()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                lang: en
+                ai:
+                  provider: openai
+                  model: gpt-5-mini
+                  api_key: test-key
+                  translate:
+                    targets:
+                      - fr
+                    front_matter_keys:
+                      - title
+                    glossary: _i18n/glossary.yml
+                """,
+            ["_layouts/default.html"] = """
+                <html>
+                <body>
+                <h1>{{ page.title }}</h1>
+                {{ content }}
+                </body>
+                </html>
+                """,
+            ["_i18n/glossary.yml"] = """
+                terms:
+                  GitHub Pages:
+                    fr: Pages GitHub
+                  Jekyll.Net: Jekyll.Net
+                """,
+            ["index.md"] = """
+                ---
+                layout: default
+                title: GitHub Pages
+                lang: en
+                ---
+                Jekyll.Net works with GitHub Pages.
+                """
+        });
+
+        var client = new FakeAiTranslationClient();
+
+        await TestInfrastructure.BuildSiteAsync(sourceDirectory, aiTranslationClient: client);
+
+        Assert.Contains(
+            client.Requests,
+            request => request.TargetLanguage == "fr"
+                && request.GlossaryEntries is { Count: 2 }
+                && request.GlossaryEntries.Any(entry => entry.Source == "GitHub Pages" && entry.Target == "Pages GitHub")
+                && request.GlossaryEntries.Any(entry => entry.Source == "Jekyll.Net" && entry.Target == "Jekyll.Net"));
+    }
+
+    [Fact]
     public async Task Build_RespectsConfigExcludeAndInclude()
     {
         var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
@@ -754,14 +914,21 @@ public sealed class SiteBuilderBehaviorTests
 
     private sealed class FakeAiTranslationClient : IAiTranslationClient
     {
+        public int CallCount { get; private set; }
+
+        public List<AiTranslationRequest> Requests { get; } = [];
+
         public Task<string> TranslateAsync(
-            string sourceLanguage,
-            string targetLanguage,
-            string text,
-            AiTextKind textKind,
+            AiTranslationRequest request,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult($"{targetLanguage}::{text}");
+            CallCount++;
+            Requests.Add(request with
+            {
+                GlossaryEntries = request.GlossaryEntries?.ToList()
+            });
+
+            return Task.FromResult($"{request.TargetLanguage}::{request.Text}");
         }
     }
 }

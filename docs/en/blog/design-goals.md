@@ -3,9 +3,7 @@ title: Why Jekyll.Net should have its own Pages docs
 description: Give the project a documentation site that directly targets the way it wants to be used.
 permalink: /en/blog/design-goals/
 lang: en
-is_en: true
 nav_key: blog
-translation_url: /zh/blog/design-goals/
 ---
 # Why Jekyll.Net should have its own Pages docs
 

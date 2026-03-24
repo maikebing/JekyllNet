@@ -43,25 +43,29 @@ public sealed class JekyllSiteBuilder
         var items = await DiscoverContentItemsAsync(options.SourceDirectory, siteConfig, options, cancellationToken);
         IAiTranslationClient? aiTranslationClient = options.AiTranslationClient;
         OpenAiCompatibleTranslationClient? ownedAiTranslationClient = null;
+        AiTranslationCacheStore? translationCache = null;
         try
         {
-            var aiTranslationSettings = ResolveAiTranslationSettings(siteConfig);
+            var aiTranslationSettings = await ResolveAiTranslationSettingsAsync(options.SourceDirectory, siteConfig, cancellationToken);
             if (aiTranslationSettings is not null)
             {
+                translationCache = await AiTranslationCacheStore.LoadAsync(aiTranslationSettings.CachePath, cancellationToken);
                 if (aiTranslationClient is null)
                 {
                     ownedAiTranslationClient = CreateAiTranslationClient(aiTranslationSettings);
                     aiTranslationClient = ownedAiTranslationClient;
                 }
 
-                var translatedItems = await TranslateContentItemsAsync(items, siteConfig, aiTranslationSettings, aiTranslationClient, cancellationToken);
+                var translatedItems = await TranslateContentItemsAsync(items, siteConfig, aiTranslationSettings, aiTranslationClient, translationCache, cancellationToken);
                 items.AddRange(translatedItems);
 
-                var translatedFooterLabels = await TranslateFooterLabelsAsync(aiTranslationSettings, aiTranslationClient, cancellationToken);
+                var translatedFooterLabels = await TranslateFooterLabelsAsync(aiTranslationSettings, aiTranslationClient, translationCache, cancellationToken);
                 if (translatedFooterLabels.Count > 0)
                 {
                     siteConfig["_auto_footer_labels"] = translatedFooterLabels;
                 }
+
+                await translationCache.SaveAsync(cancellationToken);
             }
 
             ApplyTranslationLinks(items, siteConfig);
@@ -263,6 +267,7 @@ public sealed class JekyllSiteBuilder
         IReadOnlyDictionary<string, object?> siteConfig,
         AiTranslationSettings settings,
         IAiTranslationClient translationClient,
+        AiTranslationCacheStore? translationCache,
         CancellationToken cancellationToken)
     {
         var result = new List<JekyllContentItem>();
@@ -284,7 +289,7 @@ public sealed class JekyllSiteBuilder
                     continue;
                 }
 
-                result.Add(await TranslateContentItemAsync(item, sourceLanguage, targetLanguage, settings, translationClient, cancellationToken));
+                result.Add(await TranslateContentItemAsync(item, sourceLanguage, targetLanguage, settings, translationClient, translationCache, cancellationToken));
             }
         }
 
@@ -297,6 +302,7 @@ public sealed class JekyllSiteBuilder
         string targetLanguage,
         AiTranslationSettings settings,
         IAiTranslationClient translationClient,
+        AiTranslationCacheStore? translationCache,
         CancellationToken cancellationToken)
     {
         var translatedFrontMatter = new Dictionary<string, object?>(item.FrontMatter, StringComparer.OrdinalIgnoreCase)
@@ -323,7 +329,10 @@ public sealed class JekyllSiteBuilder
                 continue;
             }
 
-            translatedFrontMatter[field] = await translationClient.TranslateAsync(
+            translatedFrontMatter[field] = await TranslateTextAsync(
+                settings,
+                translationClient,
+                translationCache,
                 sourceLanguage,
                 targetLanguage,
                 fieldValue!.ToString()!,
@@ -331,7 +340,10 @@ public sealed class JekyllSiteBuilder
                 cancellationToken);
         }
 
-        var translatedContent = await translationClient.TranslateAsync(
+        var translatedContent = await TranslateTextAsync(
+            settings,
+            translationClient,
+            translationCache,
             sourceLanguage,
             targetLanguage,
             item.RawContent,
@@ -361,6 +373,7 @@ public sealed class JekyllSiteBuilder
     private async Task<Dictionary<string, object?>> TranslateFooterLabelsAsync(
         AiTranslationSettings settings,
         IAiTranslationClient translationClient,
+        AiTranslationCacheStore? translationCache,
         CancellationToken cancellationToken)
     {
         var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -368,13 +381,13 @@ public sealed class JekyllSiteBuilder
         {
             var labels = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
-                ["icp"] = await translationClient.TranslateAsync("en", targetLanguage, "ICP Filing No.", AiTextKind.Label, cancellationToken),
-                ["public_security"] = await translationClient.TranslateAsync("en", targetLanguage, "Public Security Filing No.", AiTextKind.Label, cancellationToken),
-                ["telecom_license"] = await translationClient.TranslateAsync("en", targetLanguage, "Value-added Telecom License", AiTextKind.Label, cancellationToken),
-                ["terms"] = await translationClient.TranslateAsync("en", targetLanguage, "Terms of Service", AiTextKind.Label, cancellationToken),
-                ["privacy"] = await translationClient.TranslateAsync("en", targetLanguage, "Privacy Policy", AiTextKind.Label, cancellationToken),
-                ["report_phone"] = await translationClient.TranslateAsync("en", targetLanguage, "Report Phone", AiTextKind.Label, cancellationToken),
-                ["report_email"] = await translationClient.TranslateAsync("en", targetLanguage, "Report Email", AiTextKind.Label, cancellationToken)
+                ["icp"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "ICP Filing No.", AiTextKind.Label, cancellationToken),
+                ["public_security"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "Public Security Filing No.", AiTextKind.Label, cancellationToken),
+                ["telecom_license"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "Value-added Telecom License", AiTextKind.Label, cancellationToken),
+                ["terms"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "Terms of Service", AiTextKind.Label, cancellationToken),
+                ["privacy"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "Privacy Policy", AiTextKind.Label, cancellationToken),
+                ["report_phone"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "Report Phone", AiTextKind.Label, cancellationToken),
+                ["report_email"] = await TranslateTextAsync(settings, translationClient, translationCache, "en", targetLanguage, "Report Email", AiTextKind.Label, cancellationToken)
             };
 
             result[NormalizeLanguageCode(targetLanguage)] = labels;
@@ -400,10 +413,20 @@ public sealed class JekyllSiteBuilder
         foreach (var group in groups)
         {
             var links = group
-                .Select(item => new TranslationLink(
-                    ResolveLocaleCode(item.FrontMatter, siteConfig),
-                    ReadLocaleLabel(ResolveLocaleCode(item.FrontMatter, siteConfig), locales),
-                    item.Url))
+                .GroupBy(item => ResolveLocaleCode(item.FrontMatter, siteConfig), StringComparer.OrdinalIgnoreCase)
+                .Select(localeGroup =>
+                {
+                    var localeCode = localeGroup.Key;
+                    var selectedItem = localeGroup
+                        .OrderByDescending(item => IsCanonicalLocaleUrl(item.Url, localeCode, locales))
+                        .ThenBy(item => item.Url.Length)
+                        .First();
+
+                    return new TranslationLink(
+                        localeCode,
+                        ReadLocaleLabel(localeCode, locales),
+                        selectedItem.Url);
+                })
                 .OrderBy(link => GetLocaleOrder(link.Code, locales))
                 .ToList();
 
@@ -932,7 +955,10 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
     }
 
-    private static AiTranslationSettings? ResolveAiTranslationSettings(IReadOnlyDictionary<string, object?> siteConfig)
+    private async Task<AiTranslationSettings?> ResolveAiTranslationSettingsAsync(
+        string sourceDirectory,
+        IReadOnlyDictionary<string, object?> siteConfig,
+        CancellationToken cancellationToken)
     {
         if (!TryResolveObject(siteConfig, "ai", out _))
         {
@@ -978,13 +1004,19 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
             apiKey = Environment.GetEnvironmentVariable(apiKeyEnv);
         }
 
+        var cacheEnabled = ReadConfigBoolean(siteConfig, "ai.translate.cache") ?? true;
+        var configuredCachePath = ReadConfigString(siteConfig, "ai.translate.cache_path") ?? ".jekyllnet/translation-cache.json";
+        var glossary = await LoadAiTranslationGlossaryAsync(sourceDirectory, ReadConfigString(siteConfig, "ai.translate.glossary"), cancellationToken);
+
         return new AiTranslationSettings(
             Provider: provider,
             Model: model,
             BaseUrl: baseUrl,
             ApiKey: apiKey,
             TargetLanguages: targetLanguages,
-            FrontMatterKeys: ReadConfigStringList(siteConfig, "ai.translate.front_matter_keys", "ai.translate.fields").DefaultIfEmpty("title").ToList());
+            FrontMatterKeys: ReadConfigStringList(siteConfig, "ai.translate.front_matter_keys", "ai.translate.fields").DefaultIfEmpty("title").ToList(),
+            CachePath: cacheEnabled ? ResolveConfigFilePath(sourceDirectory, configuredCachePath) : null,
+            Glossary: glossary);
     }
 
     private static OpenAiCompatibleTranslationClient CreateAiTranslationClient(AiTranslationSettings settings)
@@ -1020,6 +1052,100 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         return ReadStringValue(frontMatter, "lang", "language", "locale")
             ?? ReadConfigString(siteConfig, "lang", "language", "locale")
             ?? "en";
+    }
+
+    private async Task<AiTranslationGlossary> LoadAiTranslationGlossaryAsync(
+        string sourceDirectory,
+        string? glossaryPath,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(glossaryPath))
+        {
+            return AiTranslationGlossary.Empty;
+        }
+
+        var resolvedPath = ResolveConfigFilePath(sourceDirectory, glossaryPath);
+        if (!File.Exists(resolvedPath))
+        {
+            throw new FileNotFoundException($"AI translation glossary file not found: {resolvedPath}", resolvedPath);
+        }
+
+        var yaml = await File.ReadAllTextAsync(resolvedPath, cancellationToken);
+        var parsed = NormalizeYamlValue(_yamlDeserializer.Deserialize<object?>(yaml));
+        if (parsed is not Dictionary<string, object?> root)
+        {
+            return AiTranslationGlossary.Empty;
+        }
+
+        var termsValue = root.TryGetValue("terms", out var configuredTerms) ? configuredTerms : parsed;
+        if (termsValue is not Dictionary<string, object?> glossaryTerms)
+        {
+            return AiTranslationGlossary.Empty;
+        }
+
+        var terms = new List<AiTranslationGlossaryTerm>();
+        foreach (var pair in glossaryTerms)
+        {
+            var source = pair.Key?.Trim();
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                continue;
+            }
+
+            switch (pair.Value)
+            {
+                case string defaultTarget when !string.IsNullOrWhiteSpace(defaultTarget):
+                    terms.Add(new AiTranslationGlossaryTerm(source, defaultTarget.Trim(), new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)));
+                    break;
+                case Dictionary<string, object?> perLanguageTargets:
+                    var targets = perLanguageTargets
+                        .Where(static entry => !string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Value?.ToString()))
+                        .ToDictionary(
+                            entry => NormalizeLanguageCode(entry.Key),
+                            entry => entry.Value!.ToString()!.Trim(),
+                            StringComparer.OrdinalIgnoreCase);
+                    terms.Add(new AiTranslationGlossaryTerm(source, null, targets));
+                    break;
+            }
+        }
+
+        return terms.Count == 0 ? AiTranslationGlossary.Empty : new AiTranslationGlossary(terms);
+    }
+
+    private static string ResolveConfigFilePath(string sourceDirectory, string configuredPath)
+    {
+        var normalizedPath = configuredPath.Replace('/', Path.DirectorySeparatorChar);
+        return Path.IsPathRooted(normalizedPath)
+            ? normalizedPath
+            : Path.GetFullPath(Path.Combine(sourceDirectory, normalizedPath));
+    }
+
+    private static async Task<string> TranslateTextAsync(
+        AiTranslationSettings settings,
+        IAiTranslationClient translationClient,
+        AiTranslationCacheStore? translationCache,
+        string sourceLanguage,
+        string targetLanguage,
+        string text,
+        AiTextKind textKind,
+        CancellationToken cancellationToken)
+    {
+        var request = new AiTranslationRequest(
+            sourceLanguage,
+            targetLanguage,
+            text,
+            textKind,
+            settings.Glossary.ResolveEntries(targetLanguage));
+
+        if (translationCache is not null
+            && translationCache.TryGet(settings.Provider, settings.Model, settings.BaseUrl, request, out var cached))
+        {
+            return cached;
+        }
+
+        var translated = await translationClient.TranslateAsync(request, cancellationToken);
+        translationCache?.Set(settings.Provider, settings.Model, settings.BaseUrl, request, translated);
+        return translated;
     }
 
     private static List<LocaleDefinition> ReadLocales(IReadOnlyDictionary<string, object?> siteConfig)
@@ -1137,6 +1263,17 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
     {
         return locales.FirstOrDefault(locale => string.Equals(locale.Code, localeCode, StringComparison.OrdinalIgnoreCase))?.Label
             ?? localeCode.ToUpperInvariant();
+    }
+
+    private static bool IsCanonicalLocaleUrl(string url, string localeCode, IReadOnlyList<LocaleDefinition> locales)
+    {
+        var localeRoot = locales.FirstOrDefault(locale => string.Equals(locale.Code, localeCode, StringComparison.OrdinalIgnoreCase))?.Root;
+        if (string.IsNullOrWhiteSpace(localeRoot))
+        {
+            return false;
+        }
+
+        return string.Equals(EnsureTrailingSlash(url), EnsureTrailingSlash(localeRoot), StringComparison.OrdinalIgnoreCase);
     }
 
     private static int GetLocaleOrder(string localeCode, IReadOnlyList<LocaleDefinition> locales)
@@ -2279,7 +2416,9 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         string BaseUrl,
         string? ApiKey,
         List<string> TargetLanguages,
-        List<string> FrontMatterKeys);
+        List<string> FrontMatterKeys,
+        string? CachePath,
+        AiTranslationGlossary Glossary);
 
     private sealed record LocaleDefinition(string Code, string Root, string Label);
 

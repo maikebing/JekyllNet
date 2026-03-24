@@ -3,9 +3,7 @@ title: 快速开始
 description: 在本地运行 Jekyll.Net，并生成 sample-site 的静态输出。
 permalink: /zh/getting-started/
 lang: zh-CN
-is_en: false
 nav_key: docs
-translation_url: /en/getting-started/
 ---
 # 快速开始
 

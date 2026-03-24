@@ -3,9 +3,7 @@ title: GitHub Pages 配置
 description: 把当前仓库 docs 目录作为 GitHub Pages 站点源。
 permalink: /zh/github-pages/
 lang: zh-CN
-is_en: false
 nav_key: docs
-translation_url: /en/github-pages/
 ---
 # GitHub Pages 配置
 

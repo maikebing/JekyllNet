@@ -3,9 +3,7 @@ title: Compatibility Notes
 description: What Jekyll.Net already implements and what still remains.
 permalink: /en/compatibility/
 lang: en
-is_en: true
 nav_key: docs
-translation_url: /zh/compatibility/
 ---
 # Compatibility Notes
 

@@ -4,9 +4,7 @@ description: "Jekyll.Net 文档站当前整理进度。"
 permalink: /zh/news/
 layout: structured
 lang: "zh-CN"
-is_en: false
 nav_key: "news"
-translation_url: /en/news/
 intro:
   eyebrow: "Project News"
   title: "项目动态"

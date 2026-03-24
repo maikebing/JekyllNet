@@ -3,9 +3,7 @@ title: 关于本站
 description: 解释这套 Jekyll.Net 文档站的来源和改造方式。
 permalink: /zh/about/
 lang: zh-CN
-is_en: false
 nav_key: about
-translation_url: /en/about/
 ---
 # 关于本站
 

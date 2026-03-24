@@ -3,9 +3,7 @@ title: 兼容性说明
 description: Jekyll.Net 当前已实现与待补齐的范围。
 permalink: /zh/compatibility/
 lang: zh-CN
-is_en: false
 nav_key: docs
-translation_url: /en/compatibility/
 ---
 # 兼容性说明
 

@@ -4,9 +4,7 @@ description: "按目标快速进入 Jekyll.Net 的文档内容。"
 permalink: /zh/navigation/
 layout: structured
 lang: "zh-CN"
-is_en: false
 nav_key: "docs"
-translation_url: /en/navigation/
 intro:
   eyebrow: "Documentation Map"
   title: "文档导航"

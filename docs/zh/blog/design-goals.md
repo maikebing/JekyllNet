@@ -3,9 +3,7 @@ title: 为什么要给 Jekyll.Net 单独写一套 Pages 文档
 description: 为项目准备一套直接面向 GitHub Pages 的说明站点。
 permalink: /zh/blog/design-goals/
 lang: zh-CN
-is_en: false
 nav_key: blog
-translation_url: /en/blog/design-goals/
 ---
 # 为什么要给 Jekyll.Net 单独写一套 Pages 文档
 

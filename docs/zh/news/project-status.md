@@ -3,9 +3,7 @@ title: docs 站点已落地
 description: Jekyll.Net 现在已经有一套可直接放在 docs 下的 GitHub Pages 源站。
 permalink: /zh/news/project-status/
 lang: zh-CN
-is_en: false
 nav_key: news
-translation_url: /en/news/project-status/
 ---
 # docs 站点已落地
 

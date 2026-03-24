@@ -67,6 +67,8 @@ ai:
     front_matter_keys:
       - title
       - description
+    glossary: _i18n/glossary.yml
+    cache_path: .jekyllnet/translation-cache.json
 ```
 
 内置快捷 provider：
@@ -94,6 +96,19 @@ ai:
 - 输出 URL 会自动按目标语言前缀生成，例如 `/fr/.../`
 - 页脚法务标签会按页面语言切换；对非中英文目标语言，会优先尝试用 AI 自动翻译标签
 - 会自动为同一路径的多语言页面生成 `translation_links`
+- 默认启用翻译缓存，未变化的文本会直接复用，避免每次 build 全量请求模型
+- `ai.translate.cache_path` 可覆盖缓存文件位置，`ai.translate.cache: false` 可关闭缓存
+- `ai.translate.glossary` 可提供术语表，保证品牌词、专有名词、多语言固定译法更稳定
+
+glossary 文件示例：
+
+```yml
+terms:
+  Jekyll.Net: Jekyll.Net
+  GitHub Pages:
+    fr: Pages GitHub
+    ja: GitHub Pages
+```
 
 ## 当前限制
 

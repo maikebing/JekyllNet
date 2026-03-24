@@ -4,9 +4,7 @@ description: "A Jekyll-style static site generator written in C# and aimed at Gi
 permalink: /en/
 layout: structured
 lang: "en"
-is_en: true
 nav_key: "docs"
-translation_url: /zh/
 hero:
   eyebrow: "GitHub Pages · Jekyll-compatible · .NET 10"
   title: "A .NET static site generator moving toward GitHub Pages behavior"

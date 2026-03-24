@@ -3,9 +3,7 @@ title: docs site is now in place
 description: Jekyll.Net now has a GitHub Pages style source site under docs.
 permalink: /en/news/project-status/
 lang: en
-is_en: true
 nav_key: news
-translation_url: /zh/news/project-status/
 ---
 # docs site is now in place
 

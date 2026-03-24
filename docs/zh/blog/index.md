@@ -4,9 +4,7 @@ description: "关于 Jekyll.Net 方向和站点设计的短文。"
 permalink: /zh/blog/
 layout: structured
 lang: "zh-CN"
-is_en: false
 nav_key: "blog"
-translation_url: /en/blog/
 intro:
   eyebrow: "Notes"
   title: "博客"

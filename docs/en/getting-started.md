@@ -3,9 +3,7 @@ title: Getting Started
 description: Run Jekyll.Net locally and generate the sample-site output.
 permalink: /en/getting-started/
 lang: en
-is_en: true
 nav_key: docs
-translation_url: /zh/getting-started/
 ---
 # Getting Started
 

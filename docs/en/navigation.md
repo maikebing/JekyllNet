@@ -4,9 +4,7 @@ description: "Jump into the Jekyll.Net docs based on your goal."
 permalink: /en/navigation/
 layout: structured
 lang: "en"
-is_en: true
 nav_key: "docs"
-translation_url: /zh/navigation/
 intro:
   eyebrow: "Documentation Map"
   title: "Documentation Map"

@@ -4,9 +4,7 @@ description: "一个用 C# 编写的 Jekyll 风格静态站点生成器，目标
 permalink: /zh/
 layout: structured
 lang: "zh-CN"
-is_en: false
 nav_key: "docs"
-translation_url: /en/
 hero:
   eyebrow: "GitHub Pages · Jekyll-compatible · .NET 10"
   title: "用 .NET 写一个越来越像 GitHub Pages 的静态站点生成器"

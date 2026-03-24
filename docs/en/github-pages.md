@@ -3,9 +3,7 @@ title: GitHub Pages Setup
 description: Publish the current docs directory as a GitHub Pages source site.
 permalink: /en/github-pages/
 lang: en
-is_en: true
 nav_key: docs
-translation_url: /zh/github-pages/
 ---
 # GitHub Pages Setup
 

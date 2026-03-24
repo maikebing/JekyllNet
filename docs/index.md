@@ -4,9 +4,7 @@ description: "Choose Chinese or English documentation for Jekyll.Net."
 permalink: /
 layout: structured
 lang: "zh-CN"
-is_en: false
 nav_key: "docs"
-translation_url: /en/
 intro:
   eyebrow: "Language Gateway"
   title: "选择文档语言"

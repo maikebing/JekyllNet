@@ -4,9 +4,7 @@ description: "Short notes about the Jekyll.Net direction and docs design choices
 permalink: /en/blog/
 layout: structured
 lang: "en"
-is_en: true
 nav_key: "blog"
-translation_url: /zh/blog/
 intro:
   eyebrow: "Notes"
   title: "Blog"

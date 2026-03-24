@@ -4,9 +4,7 @@ description: "Short updates about the Jekyll.Net documentation site and project 
 permalink: /en/news/
 layout: structured
 lang: "en"
-is_en: true
 nav_key: "news"
-translation_url: /zh/news/
 intro:
   eyebrow: "Project News"
   title: "Project News"

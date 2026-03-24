@@ -3,9 +3,7 @@ title: About This Site
 description: Where this Jekyll.Net docs site came from and how it was adapted.
 permalink: /en/about/
 lang: en
-is_en: true
 nav_key: about
-translation_url: /zh/about/
 ---
 # About This Site
 
