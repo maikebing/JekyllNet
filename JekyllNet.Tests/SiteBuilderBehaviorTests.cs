@@ -497,6 +497,110 @@ public sealed class SiteBuilderBehaviorTests
     }
 
     [Fact]
+    public async Task Build_GeneratesTranslationLinksAcrossLocaleVariants()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                locales:
+                  - code: zh
+                    root: /zh/
+                    label: 中文
+                  - code: en
+                    root: /en/
+                    label: English
+                  - code: fr
+                    root: /fr/
+                    label: Français
+                """,
+            ["_layouts/default.html"] = """
+                <html>
+                <body>
+                {% for link in page.translation_links %}
+                {{ link.label }}={{ link.url }};
+                {% endfor %}
+                {{ content }}
+                </body>
+                </html>
+                """,
+            ["zh/page.md"] = """
+                ---
+                layout: default
+                lang: zh-CN
+                permalink: /zh/page/
+                ---
+                中文页
+                """,
+            ["en/page.md"] = """
+                ---
+                layout: default
+                lang: en
+                permalink: /en/page/
+                ---
+                English page
+                """,
+            ["fr/page.md"] = """
+                ---
+                layout: default
+                lang: fr
+                permalink: /fr/page/
+                ---
+                Page francaise
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory);
+        var zhOutput = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "zh", "page", "index.html"));
+
+        Assert.Contains("English=/en/page/;", zhOutput, StringComparison.Ordinal);
+        Assert.Contains("Français=/fr/page/;", zhOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("中文=/zh/page/;", zhOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Build_AcceptsOpenAiCompatibleThirdPartyProviderConfig()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                lang: en
+                ai:
+                  provider: siliconflow
+                  base_url: https://api.siliconflow.example
+                  model: qwen-translator
+                  api_key: test-key
+                  translate:
+                    targets:
+                      - fr
+                """,
+            ["_layouts/default.html"] = """
+                <html>
+                <body>
+                <h1>{{ page.title }}</h1>
+                {{ content }}
+                </body>
+                </html>
+                """,
+            ["index.md"] = """
+                ---
+                layout: default
+                title: Hello
+                lang: en
+                ---
+                Welcome
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(
+            sourceDirectory,
+            aiTranslationClient: new FakeAiTranslationClient());
+        var translatedOutput = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "fr", "index.html"));
+
+        Assert.Contains("fr::Hello", translatedOutput, StringComparison.Ordinal);
+        Assert.Contains("fr::Welcome", translatedOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Build_RespectsConfigExcludeAndInclude()
     {
         var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>

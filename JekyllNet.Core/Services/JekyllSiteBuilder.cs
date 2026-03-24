@@ -63,6 +63,8 @@ public sealed class JekyllSiteBuilder
                     siteConfig["_auto_footer_labels"] = translatedFooterLabels;
                 }
             }
+
+            ApplyTranslationLinks(items, siteConfig);
         }
         finally
         {
@@ -379,6 +381,57 @@ public sealed class JekyllSiteBuilder
         }
 
         return result;
+    }
+
+    private static void ApplyTranslationLinks(
+        IReadOnlyCollection<JekyllContentItem> items,
+        IReadOnlyDictionary<string, object?> siteConfig)
+    {
+        var locales = ReadLocales(siteConfig);
+        foreach (var item in items)
+        {
+            item.FrontMatter["locale_code"] = ResolveLocaleCode(item.FrontMatter, siteConfig);
+        }
+
+        var groups = items
+            .GroupBy(item => BuildTranslationGroupKey(item, locales, siteConfig), StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Select(item => ResolveLocaleCode(item.FrontMatter, siteConfig)).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1);
+
+        foreach (var group in groups)
+        {
+            var links = group
+                .Select(item => new TranslationLink(
+                    ResolveLocaleCode(item.FrontMatter, siteConfig),
+                    ReadLocaleLabel(ResolveLocaleCode(item.FrontMatter, siteConfig), locales),
+                    item.Url))
+                .OrderBy(link => GetLocaleOrder(link.Code, locales))
+                .ToList();
+
+            foreach (var item in group)
+            {
+                var currentCode = ResolveLocaleCode(item.FrontMatter, siteConfig);
+                var relatedLinks = links
+                    .Where(link => !string.Equals(link.Code, currentCode, StringComparison.OrdinalIgnoreCase))
+                    .Select(link => new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["code"] = link.Code,
+                        ["label"] = link.Label,
+                        ["url"] = link.Url
+                    })
+                    .Cast<object?>()
+                    .ToList();
+
+                if (relatedLinks.Count > 0)
+                {
+                    item.FrontMatter["translation_links"] = relatedLinks;
+                    if (relatedLinks.Count == 1 && relatedLinks[0] is Dictionary<string, object?> onlyLink)
+                    {
+                        item.FrontMatter["translation_url"] = onlyLink["url"];
+                        item.FrontMatter["translation_target_label"] = onlyLink["label"];
+                    }
+                }
+            }
+        }
     }
 
     private Dictionary<string, object?> ToLiquidObject(JekyllContentItem item)
@@ -893,18 +946,26 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         }
 
         var provider = ReadConfigString(siteConfig, "ai.provider") ?? "openai";
+        var normalizedProvider = provider.Trim().ToLowerInvariant();
         var model = ReadConfigString(siteConfig, "ai.model") ?? provider.ToLowerInvariant() switch
         {
             "deepseek" => "deepseek-chat",
             "ollama" => "qwen3:8b",
             _ => "gpt-5-mini"
         };
-        var baseUrl = ReadConfigString(siteConfig, "ai.base_url") ?? provider.ToLowerInvariant() switch
+        var baseUrl = ReadConfigString(siteConfig, "ai.base_url");
+        if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            "deepseek" => "https://api.deepseek.com",
-            "ollama" => "http://localhost:11434",
-            _ => "https://api.openai.com"
-        };
+            baseUrl = normalizedProvider switch
+            {
+                "deepseek" => "https://api.deepseek.com",
+                "ollama" => "http://localhost:11434",
+                "openai" => "https://api.openai.com",
+                "openai-compatible" => throw new InvalidOperationException("ai.base_url is required when ai.provider is openai-compatible."),
+                "compatible" => throw new InvalidOperationException("ai.base_url is required when ai.provider is compatible."),
+                _ => throw new InvalidOperationException($"Unknown AI provider '{provider}'. Configure ai.base_url for any OpenAI-compatible third-party provider.")
+            };
+        }
         var apiKeyEnv = ReadConfigString(siteConfig, "ai.api_key_env") ?? provider.ToLowerInvariant() switch
         {
             "deepseek" => "DEEPSEEK_API_KEY",
@@ -959,6 +1020,24 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         return ReadStringValue(frontMatter, "lang", "language", "locale")
             ?? ReadConfigString(siteConfig, "lang", "language", "locale")
             ?? "en";
+    }
+
+    private static List<LocaleDefinition> ReadLocales(IReadOnlyDictionary<string, object?> siteConfig)
+    {
+        var configuredLocales = ReadConfigValue(siteConfig, "locales");
+        if (configuredLocales is IEnumerable<object?> sequence)
+        {
+            return sequence
+                .OfType<Dictionary<string, object?>>()
+                .Select(locale => new LocaleDefinition(
+                    ReadStringValue(locale, "code") ?? string.Empty,
+                    ReadStringValue(locale, "root") ?? "/" + (ReadStringValue(locale, "code") ?? string.Empty) + "/",
+                    ReadStringValue(locale, "label") ?? (ReadStringValue(locale, "code") ?? string.Empty).ToUpperInvariant()))
+                .Where(locale => !string.IsNullOrWhiteSpace(locale.Code))
+                .ToList();
+        }
+
+        return [];
     }
 
     private static List<string> ReadConfigStringList(IReadOnlyDictionary<string, object?> siteConfig, params string[] keys)
@@ -1031,6 +1110,47 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
 
     private static string NormalizeLanguageCode(string language)
         => language.Trim().ToLowerInvariant();
+
+    private static string ResolveLocaleCode(
+        IReadOnlyDictionary<string, object?> frontMatter,
+        IReadOnlyDictionary<string, object?> siteConfig)
+        => GetLanguagePathSegment(ResolveItemLanguage(frontMatter, siteConfig));
+
+    private static string BuildTranslationGroupKey(
+        JekyllContentItem item,
+        IReadOnlyCollection<LocaleDefinition> locales,
+        IReadOnlyDictionary<string, object?> siteConfig)
+    {
+        var normalizedUrl = EnsureTrailingSlash(item.Url);
+        var segments = normalizedUrl.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (segments.Count > 0 && locales.Any(locale => string.Equals(locale.Code, segments[0], StringComparison.OrdinalIgnoreCase)))
+        {
+            segments.RemoveAt(0);
+        }
+
+        return segments.Count == 0
+            ? "/"
+            : "/" + string.Join('/', segments) + "/";
+    }
+
+    private static string ReadLocaleLabel(string localeCode, IReadOnlyList<LocaleDefinition> locales)
+    {
+        return locales.FirstOrDefault(locale => string.Equals(locale.Code, localeCode, StringComparison.OrdinalIgnoreCase))?.Label
+            ?? localeCode.ToUpperInvariant();
+    }
+
+    private static int GetLocaleOrder(string localeCode, IReadOnlyList<LocaleDefinition> locales)
+    {
+        for (var index = 0; index < locales.Count; index++)
+        {
+            if (string.Equals(locales[index].Code, localeCode, StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
+
+        return int.MaxValue;
+    }
 
     private static bool TryResolveObject(IReadOnlyDictionary<string, object?> variables, string path, out object? value)
     {
@@ -2160,4 +2280,8 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         string? ApiKey,
         List<string> TargetLanguages,
         List<string> FrontMatterKeys);
+
+    private sealed record LocaleDefinition(string Code, string Root, string Label);
+
+    private sealed record TranslationLink(string Code, string Label, string Url);
 }

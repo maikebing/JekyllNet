@@ -69,11 +69,23 @@ ai:
       - description
 ```
 
-支持的 provider：
+内置快捷 provider：
 
 - `openai`
 - `deepseek`
 - `ollama`
+
+也支持任意 OpenAI-compatible 第三方服务商，只要配置：
+
+```yml
+ai:
+  provider: siliconflow
+  base_url: https://api.example.com
+  model: your-model
+  api_key_env: THIRD_PARTY_API_KEY
+  translate:
+    targets: [fr, ja]
+```
 
 默认行为：
 
@@ -81,6 +93,7 @@ ai:
 - 自动翻译 `title`，可通过 `ai.translate.front_matter_keys` 扩展
 - 输出 URL 会自动按目标语言前缀生成，例如 `/fr/.../`
 - 页脚法务标签会按页面语言切换；对非中英文目标语言，会优先尝试用 AI 自动翻译标签
+- 会自动为同一路径的多语言页面生成 `translation_links`
 
 ## 当前限制
 
