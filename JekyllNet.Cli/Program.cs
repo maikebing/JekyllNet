@@ -22,6 +22,7 @@ static Command CreateBuildCommand()
     var futureOption = CreateFutureOption();
     var unpublishedOption = CreateUnpublishedOption();
     var postsPerPageOption = CreatePostsPerPageOption();
+    var verboseOption = CreateVerboseOption();
     var githubOutputDestinationOption = CreateGitHubOutputDestinationOption();
 
     var buildCommand = new Command("build", "Build a Jekyll-compatible site")
@@ -32,12 +33,13 @@ static Command CreateBuildCommand()
         futureOption,
         unpublishedOption,
         postsPerPageOption,
+        verboseOption,
         githubOutputDestinationOption
     };
 
     buildCommand.SetAction(async parseResult =>
     {
-        var settings = ReadBuildSettings(parseResult, sourceOption, destinationOption, draftsOption, futureOption, unpublishedOption, postsPerPageOption, githubOutputDestinationOption);
+        var settings = ReadBuildSettings(parseResult, sourceOption, destinationOption, draftsOption, futureOption, unpublishedOption, postsPerPageOption, verboseOption, githubOutputDestinationOption);
         await CliRuntime.BuildOnceAsync(settings, parseResult.InvocationConfiguration.Output, CancellationToken.None);
     });
 
@@ -52,6 +54,7 @@ static Command CreateWatchCommand()
     var futureOption = CreateFutureOption();
     var unpublishedOption = CreateUnpublishedOption();
     var postsPerPageOption = CreatePostsPerPageOption();
+    var verboseOption = CreateVerboseOption();
 
     var watchCommand = new Command("watch", "Rebuild the site when source files change")
     {
@@ -60,12 +63,13 @@ static Command CreateWatchCommand()
         draftsOption,
         futureOption,
         unpublishedOption,
-        postsPerPageOption
+        postsPerPageOption,
+        verboseOption
     };
 
     watchCommand.SetAction(async parseResult =>
     {
-        var settings = ReadBuildSettings(parseResult, sourceOption, destinationOption, draftsOption, futureOption, unpublishedOption, postsPerPageOption);
+        var settings = ReadBuildSettings(parseResult, sourceOption, destinationOption, draftsOption, futureOption, unpublishedOption, postsPerPageOption, verboseOption);
         using var cancellation = CreateConsoleCancellationTokenSource();
         await CliRuntime.WatchAsync(settings, parseResult.InvocationConfiguration.Output, cancellation.Token);
     });
@@ -81,6 +85,7 @@ static Command CreateServeCommand()
     var futureOption = CreateFutureOption();
     var unpublishedOption = CreateUnpublishedOption();
     var postsPerPageOption = CreatePostsPerPageOption();
+    var verboseOption = CreateVerboseOption();
     var hostOption = CreateHostOption();
     var portOption = CreatePortOption();
     var noWatchOption = CreateNoWatchOption();
@@ -93,6 +98,7 @@ static Command CreateServeCommand()
         futureOption,
         unpublishedOption,
         postsPerPageOption,
+        verboseOption,
         hostOption,
         portOption,
         noWatchOption
@@ -100,7 +106,7 @@ static Command CreateServeCommand()
 
     serveCommand.SetAction(async parseResult =>
     {
-        var buildSettings = ReadBuildSettings(parseResult, sourceOption, destinationOption, draftsOption, futureOption, unpublishedOption, postsPerPageOption);
+        var buildSettings = ReadBuildSettings(parseResult, sourceOption, destinationOption, draftsOption, futureOption, unpublishedOption, postsPerPageOption, verboseOption);
         var serveSettings = new ServeCommandSettings(
             buildSettings,
             parseResult.GetValue(hostOption) ?? "localhost",
@@ -162,6 +168,13 @@ static Option<int?> CreatePostsPerPageOption()
     return option;
 }
 
+static Option<bool> CreateVerboseOption()
+{
+    var option = new Option<bool>("--verbose");
+    option.Description = "Write per-file build progress logs";
+    return option;
+}
+
 static Option<bool> CreateGitHubOutputDestinationOption()
 {
     var option = new Option<bool>("--github-output-destination");
@@ -205,6 +218,7 @@ static BuildCommandSettings ReadBuildSettings(
     Option<bool> futureOption,
     Option<bool> unpublishedOption,
     Option<int?> postsPerPageOption,
+    Option<bool> verboseOption,
     Option<bool>? githubOutputDestinationOption = null)
 {
     var source = parseResult.GetValue(sourceOption)?.FullName ?? Directory.GetCurrentDirectory();
@@ -218,7 +232,8 @@ static BuildCommandSettings ReadBuildSettings(
         parseResult.GetValue(futureOption),
         parseResult.GetValue(unpublishedOption),
         parseResult.GetValue(postsPerPageOption),
-        writeGitHubOutputDestination);
+        writeGitHubOutputDestination,
+        parseResult.GetValue(verboseOption));
 }
 
 static CancellationTokenSource CreateConsoleCancellationTokenSource()

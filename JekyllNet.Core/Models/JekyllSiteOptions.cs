@@ -20,4 +20,8 @@ public sealed class JekyllSiteOptions
     public int? PostsPerPage { get; init; }
 
     public IAiTranslationClient? AiTranslationClient { get; init; }
+
+    public Action<string>? Log { get; init; }
+
+    public bool VerboseLogging { get; init; }
 }

@@ -575,6 +575,23 @@ public sealed class SiteBuilderBehaviorTests
     }
 
     [Fact]
+    public async Task Build_InvalidSass_ThrowsWithFileContext()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["assets/css/main.scss"] = """
+                $brand: #123456
+                body { color: $brand; }
+                """
+        });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => TestInfrastructure.BuildSiteAsync(sourceDirectory));
+
+        Assert.Contains("assets/css/main.scss", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("Failed to compile Sass entry", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Build_AutoTranslatesMarkdownContent_WhenAiConfigured()
     {
         var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>

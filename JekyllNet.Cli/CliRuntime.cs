@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -16,7 +17,8 @@ internal sealed record BuildCommandSettings(
     bool IncludeFuture,
     bool IncludeUnpublished,
     int? PostsPerPage,
-    bool WriteGitHubOutputDestination);
+    bool WriteGitHubOutputDestination,
+    bool VerboseLogging);
 
 internal sealed record ServeCommandSettings(
     BuildCommandSettings Build,
@@ -26,12 +28,24 @@ internal sealed record ServeCommandSettings(
 
 internal static class CliRuntime
 {
+    private const string DocumentationUrl = "https://jekyllnet.help/";
+    private const string RepositoryUrl = "https://github.com/JekyllNet/JekyllNet";
+
     public static async Task BuildOnceAsync(BuildCommandSettings settings, TextWriter output, CancellationToken cancellationToken)
     {
         var builder = new JekyllSiteBuilder();
-        await builder.BuildAsync(ToSiteOptions(settings), cancellationToken);
-        await WriteGitHubOutputAsync(settings, cancellationToken);
-        await output.WriteLineAsync($"Build complete: {settings.DestinationDirectory}");
+        try
+        {
+            await output.WriteLineAsync($"JekyllNet {GetProductVersion()} | docs: {DocumentationUrl} | repo: {RepositoryUrl}");
+            await builder.BuildAsync(ToSiteOptions(settings, output), cancellationToken);
+            await WriteGitHubOutputAsync(settings, cancellationToken);
+            await output.WriteLineAsync($"Build complete: {settings.DestinationDirectory}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            await output.WriteLineAsync($"Build failed: {ex.Message}");
+            throw;
+        }
     }
 
     public static async Task WatchAsync(BuildCommandSettings settings, TextWriter output, CancellationToken cancellationToken)
@@ -83,7 +97,7 @@ internal static class CliRuntime
         }
     }
 
-    private static JekyllSiteOptions ToSiteOptions(BuildCommandSettings settings)
+    private static JekyllSiteOptions ToSiteOptions(BuildCommandSettings settings, TextWriter output)
         => new()
         {
             SourceDirectory = settings.SourceDirectory,
@@ -91,8 +105,21 @@ internal static class CliRuntime
             IncludeDrafts = settings.IncludeDrafts,
             IncludeFuture = settings.IncludeFuture,
             IncludeUnpublished = settings.IncludeUnpublished,
-            PostsPerPage = settings.PostsPerPage
+            PostsPerPage = settings.PostsPerPage,
+            VerboseLogging = settings.VerboseLogging,
+            Log = message => output.WriteLine(message)
         };
+
+    private static string GetProductVersion()
+    {
+        var version = typeof(CliRuntime).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion
+            ?? typeof(CliRuntime).Assembly.GetName().Version?.ToString()
+            ?? "unknown";
+
+        return version.Split('+', 2)[0];
+    }
 
     private static async Task WriteGitHubOutputAsync(BuildCommandSettings settings, CancellationToken cancellationToken)
     {

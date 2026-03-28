@@ -30,6 +30,8 @@ public sealed class JekyllSiteBuilder
             throw new DirectoryNotFoundException($"Source directory not found: {options.SourceDirectory}");
         }
 
+        LogInfo(options, $"Starting build: {options.SourceDirectory} -> {options.DestinationDirectory}");
+
         if (Directory.Exists(options.DestinationDirectory))
         {
             Directory.Delete(options.DestinationDirectory, recursive: true);
@@ -44,6 +46,12 @@ public sealed class JekyllSiteBuilder
         var layouts = await LoadNamedTemplatesAsync(templateDirectories, options.Compatibility.LayoutsDirectoryName, cancellationToken);
         var includes = await LoadNamedTemplatesAsync(templateDirectories, options.Compatibility.IncludesDirectoryName, cancellationToken);
         var markdownPipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+
+        LogInfo(options, $"Loaded site configuration, {layouts.Count} layout entries, {includes.Count} include entries, and {data.Count} top-level data entries.");
+        if (inheritedThemeDirectories.Count > 0)
+        {
+            LogInfo(options, $"Using {inheritedThemeDirectories.Count} inherited theme directory(s).", verboseOnly: true);
+        }
 
         var items = await DiscoverContentItemsAsync(options.SourceDirectory, siteConfig, options, cancellationToken);
         IAiTranslationClient? aiTranslationClient = options.AiTranslationClient;
@@ -80,11 +88,13 @@ public sealed class JekyllSiteBuilder
             ownedAiTranslationClient?.Dispose();
         }
 
+        LogInfo(options, $"Discovered {items.Count} content item(s).");
         PrepareContentItems(items, markdownPipeline, siteConfig);
         var posts = items.Where(x => x.IsPost).OrderByDescending(x => x.Date).ToList();
         var paginatedItems = CreatePaginationItems(items, posts, siteConfig, options);
         items.AddRange(paginatedItems);
         var staticFiles = await DiscoverStaticFilesAsync(options.SourceDirectory, inheritedThemeDirectories, siteConfig, items, options, cancellationToken);
+        LogInfo(options, $"Discovered {staticFiles.Count} static file(s).");
         var collections = items
             .Where(x => !string.IsNullOrWhiteSpace(x.Collection))
             .GroupBy(x => x.Collection, StringComparer.OrdinalIgnoreCase)
@@ -105,17 +115,26 @@ public sealed class JekyllSiteBuilder
             Compatibility = options.Compatibility
         };
 
+        LogInfo(options, $"Rendering {items.Count} page(s).");
         foreach (var item in items)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            LogInfo(options, $"Rendering {NormalizeLogPath(item.RelativePath)} -> {NormalizeLogPath(item.OutputRelativePath)}", verboseOnly: true);
 
-            var variables = BuildVariables(context, item, item.RenderedContent);
-            var rendered = ApplyLayout(item, item.RenderedContent, context.Layouts, context.Includes, variables);
-            rendered = ApplyAutomaticSiteEnhancements(rendered, item.OutputRelativePath, siteConfig, item.FrontMatter);
+            try
+            {
+                var variables = BuildVariables(context, item, item.RenderedContent);
+                var rendered = ApplyLayout(item, item.RenderedContent, context.Layouts, context.Includes, variables);
+                rendered = ApplyAutomaticSiteEnhancements(rendered, item.OutputRelativePath, siteConfig, item.FrontMatter);
 
-            var destinationPath = Path.Combine(options.DestinationDirectory, item.OutputRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
-            await File.WriteAllTextAsync(destinationPath, rendered, cancellationToken);
+                var destinationPath = Path.Combine(options.DestinationDirectory, item.OutputRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                await File.WriteAllTextAsync(destinationPath, rendered, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                throw new InvalidOperationException($"Failed to render content item '{item.RelativePath}'. {ex.Message}", ex);
+            }
         }
 
         await CompileSassAsync(
@@ -126,7 +145,9 @@ public sealed class JekyllSiteBuilder
             context.SiteConfig,
             context.Includes,
             cancellationToken);
-        await CopyStaticFilesAsync(options.DestinationDirectory, staticFiles, context, cancellationToken);
+        await CopyStaticFilesAsync(options.DestinationDirectory, staticFiles, context, options, cancellationToken);
+
+        LogInfo(options, $"Finished build: {items.Count} page(s), {staticFiles.Count} static file(s), destination {options.DestinationDirectory}");
     }
 
     private async Task<List<JekyllContentItem>> DiscoverContentItemsAsync(
@@ -148,13 +169,20 @@ public sealed class JekyllSiteBuilder
                 continue;
             }
 
-            var text = await File.ReadAllTextAsync(file, cancellationToken);
-            var document = _frontMatterParser.Parse(text);
-            var frontMatter = ApplyFrontMatterDefaults(relativePath, document.FrontMatter, siteConfig, collectionDefinitions, options);
-            var item = CreateContentItem(file, relativePath, frontMatter, document.Content, collectionDefinitions, siteConfig, options);
-            if (ShouldIncludeItem(item, options))
+            try
             {
-                result.Add(item);
+                var text = await File.ReadAllTextAsync(file, cancellationToken);
+                var document = _frontMatterParser.Parse(text);
+                var frontMatter = ApplyFrontMatterDefaults(relativePath, document.FrontMatter, siteConfig, collectionDefinitions, options);
+                var item = CreateContentItem(file, relativePath, frontMatter, document.Content, collectionDefinitions, siteConfig, options);
+                if (ShouldIncludeItem(item, options))
+                {
+                    result.Add(item);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                throw new InvalidOperationException($"Failed to parse content file '{relativePath}'. {ex.Message}", ex);
             }
         }
 
@@ -1762,17 +1790,24 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
             var content = string.Empty;
             Dictionary<string, object?> frontMatter;
 
-            if (IsTextStaticFile(file))
+            try
             {
-                var text = await File.ReadAllTextAsync(file, cancellationToken);
-                var document = _frontMatterParser.Parse(text);
-                hasFrontMatter = document.FrontMatter.Count > 0;
-                content = hasFrontMatter ? document.Content : text;
-                frontMatter = ApplyFrontMatterDefaults(relativePath, document.FrontMatter, siteConfig, collectionDefinitions, options);
+                if (IsTextStaticFile(file))
+                {
+                    var text = await File.ReadAllTextAsync(file, cancellationToken);
+                    var document = _frontMatterParser.Parse(text);
+                    hasFrontMatter = document.FrontMatter.Count > 0;
+                    content = hasFrontMatter ? document.Content : text;
+                    frontMatter = ApplyFrontMatterDefaults(relativePath, document.FrontMatter, siteConfig, collectionDefinitions, options);
+                }
+                else
+                {
+                    frontMatter = ApplyFrontMatterDefaults(relativePath, new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase), siteConfig, collectionDefinitions, options);
+                }
             }
-            else
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                frontMatter = ApplyFrontMatterDefaults(relativePath, new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase), siteConfig, collectionDefinitions, options);
+                throw new InvalidOperationException($"Failed to inspect static file '{relativePath}'. {ex.Message}", ex);
             }
 
             result[relativePath] = new JekyllStaticFile
@@ -1792,34 +1827,44 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         string destinationDirectory,
         IReadOnlyCollection<JekyllStaticFile> staticFiles,
         JekyllSiteContext context,
+        JekyllSiteOptions options,
         CancellationToken cancellationToken)
     {
+        LogInfo(options, $"Copying {staticFiles.Count} static file(s).");
         foreach (var file in staticFiles)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var destinationPath = Path.Combine(destinationDirectory, file.OutputRelativePath.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            LogInfo(options, $"Copying {NormalizeLogPath(file.RelativePath)} -> {NormalizeLogPath(file.OutputRelativePath)}", verboseOnly: true);
 
-            if (file.HasFrontMatter && IsTextStaticFile(file.SourcePath))
+            try
             {
-                var page = new Dictionary<string, object?>(file.FrontMatter, StringComparer.OrdinalIgnoreCase)
+                if (file.HasFrontMatter && IsTextStaticFile(file.SourcePath))
                 {
-                    ["path"] = file.RelativePath,
-                    ["url"] = file.Url
-                };
-                var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["page"] = page,
-                    ["site"] = context.SiteConfig,
-                    ["content"] = file.Content
-                };
-                var rendered = _templateRenderer.Render(file.Content, variables, context.Includes);
-                rendered = ApplyAutomaticSiteEnhancements(rendered, file.OutputRelativePath, context.SiteConfig, page);
-                await File.WriteAllTextAsync(destinationPath, rendered, cancellationToken);
-                continue;
-            }
+                    var page = new Dictionary<string, object?>(file.FrontMatter, StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["path"] = file.RelativePath,
+                        ["url"] = file.Url
+                    };
+                    var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["page"] = page,
+                        ["site"] = context.SiteConfig,
+                        ["content"] = file.Content
+                    };
+                    var rendered = _templateRenderer.Render(file.Content, variables, context.Includes);
+                    rendered = ApplyAutomaticSiteEnhancements(rendered, file.OutputRelativePath, context.SiteConfig, page);
+                    await File.WriteAllTextAsync(destinationPath, rendered, cancellationToken);
+                    continue;
+                }
 
-            File.Copy(file.SourcePath, destinationPath, overwrite: true);
+                File.Copy(file.SourcePath, destinationPath, overwrite: true);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                throw new InvalidOperationException($"Failed to copy static file '{file.RelativePath}'. {ex.Message}", ex);
+            }
         }
     }
 
@@ -2040,6 +2085,7 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
             return;
         }
 
+        LogInfo(options, $"Compiling {sassFiles.Count} Sass entry file(s).");
         EnsureSassEngineRegistered();
 
         var includePaths = inheritedThemeDirectories
@@ -2060,6 +2106,7 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
             var cssRelative = Path.ChangeExtension(relative, ".css")!;
             var destinationPath = Path.Combine(destinationDirectory, cssRelative.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            LogInfo(options, $"Compiling Sass {relative} -> {cssRelative}", verboseOnly: true);
             var renderedSource = await RenderSassSourceAsync(file, relative, siteVariables, includes, cancellationToken);
             try
             {
@@ -2069,9 +2116,9 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
                 });
                 await File.WriteAllTextAsync(destinationPath, result.CompiledContent, cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                await File.WriteAllTextAsync(destinationPath, renderedSource, cancellationToken);
+                throw new InvalidOperationException($"Failed to compile Sass entry '{relative}'. {ex.Message}", ex);
             }
         }
     }
@@ -2083,26 +2130,33 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         IReadOnlyDictionary<string, string> includes,
         CancellationToken cancellationToken)
     {
-        var source = await File.ReadAllTextAsync(sourcePath, cancellationToken);
-        var document = _frontMatterParser.Parse(source);
-        if (document.FrontMatter.Count == 0)
+        try
         {
-            return source;
+            var source = await File.ReadAllTextAsync(sourcePath, cancellationToken);
+            var document = _frontMatterParser.Parse(source);
+            if (document.FrontMatter.Count == 0)
+            {
+                return source;
+            }
+
+            var page = new Dictionary<string, object?>(document.FrontMatter, StringComparer.OrdinalIgnoreCase)
+            {
+                ["path"] = relativePath,
+                ["url"] = "/" + Path.ChangeExtension(relativePath, ".css")!.Replace('\\', '/')
+            };
+            var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["page"] = page,
+                ["site"] = siteVariables,
+                ["content"] = document.Content
+            };
+
+            return _templateRenderer.Render(document.Content, variables, includes);
         }
-
-        var page = new Dictionary<string, object?>(document.FrontMatter, StringComparer.OrdinalIgnoreCase)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            ["path"] = relativePath,
-            ["url"] = "/" + Path.ChangeExtension(relativePath, ".css")!.Replace('\\', '/')
-        };
-        var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["page"] = page,
-            ["site"] = siteVariables,
-            ["content"] = document.Content
-        };
-
-        return _templateRenderer.Render(document.Content, variables, includes);
+            throw new InvalidOperationException($"Failed to prepare Sass entry '{relativePath}'. {ex.Message}", ex);
+        }
     }
 
     private static HashSet<string> ReadCollectionDefinitions(Dictionary<string, object?> siteConfig, JekyllSiteOptions options)
@@ -2875,6 +2929,19 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
             _ => value
         };
     }
+
+    private static void LogInfo(JekyllSiteOptions options, string message, bool verboseOnly = false)
+    {
+        if (options.Log is null || (verboseOnly && !options.VerboseLogging))
+        {
+            return;
+        }
+
+        options.Log(message);
+    }
+
+    private static string NormalizeLogPath(string path)
+        => path.Replace('\\', '/');
 
     private sealed record FooterLabels(
         string IcpLabel,
