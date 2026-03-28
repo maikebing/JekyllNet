@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -44,13 +44,13 @@ jobs:
         run: dotnet pack ./JekyllNet.Cli/JekyllNet.Cli.csproj --configuration Release --no-restore --output ./artifacts/nupkg
 
       - name: Upload site artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: built-sites
           path: ./artifacts/sites
 
       - name: Upload tool package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dotnet-tool-package
           path: ./artifacts/nupkg
