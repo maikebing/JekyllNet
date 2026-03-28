@@ -75,21 +75,55 @@ jobs:
 
           dotnet @args
 
+      - name: Publish Linux portable build
+        shell: pwsh
+        run: |
+          $args = @(
+            'publish',
+            './JekyllNet.Cli/JekyllNet.Cli.csproj',
+            '--configuration', 'Release',
+            '--runtime', 'linux-x64',
+            '--self-contained', 'true',
+            '-p:PublishSingleFile=true',
+            "-p:Version=${{ steps.version.outputs.package_version }}",
+            '-o', './artifacts/publish/linux-x64'
+          )
+
+          dotnet @args
+
       - name: Archive Windows portable build
         shell: pwsh
         run: Compress-Archive -Path ./artifacts/publish/win-x64/* -DestinationPath ./artifacts/JekyllNet-win-x64.zip
 
+      - name: Archive Linux portable build
+        shell: pwsh
+        run: tar -czf ./artifacts/JekyllNet-linux-x64.tar.gz -C ./artifacts/publish/linux-x64 .
+
       - name: Generate release checksums
         id: checksums
         shell: pwsh
-        run: >
-          dotnet run --project ./scripts/JekyllNet.ReleaseTool/JekyllNet.ReleaseTool.csproj --
-          write-sha256
-          --file ./artifacts/JekyllNet-win-x64.zip
-          --asset-name JekyllNet-win-x64.zip
-          --output ./artifacts/SHA256SUMS.txt
-          --github-output $env:GITHUB_OUTPUT
-          --github-output-key windows_x64_zip_sha256
+        run: |
+          $assets = @(
+            @{
+              Path = './artifacts/JekyllNet-win-x64.zip'
+              Name = 'JekyllNet-win-x64.zip'
+              OutputKey = 'windows_x64_zip_sha256'
+            },
+            @{
+              Path = './artifacts/JekyllNet-linux-x64.tar.gz'
+              Name = 'JekyllNet-linux-x64.tar.gz'
+              OutputKey = 'linux_x64_tgz_sha256'
+            }
+          )
+
+          $lines = New-Object System.Collections.Generic.List[string]
+          foreach ($asset in $assets) {
+            $hash = (Get-FileHash -Algorithm SHA256 -Path $asset.Path).Hash.ToUpperInvariant()
+            $lines.Add("$hash  $($asset.Name)")
+            "$($asset.OutputKey)=$hash" >> $env:GITHUB_OUTPUT
+          }
+
+          Set-Content -Path ./artifacts/SHA256SUMS.txt -Value $lines
 
       - name: Generate winget manifests
         id: winget
@@ -112,6 +146,7 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             ./artifacts/JekyllNet-win-x64.zip
+            ./artifacts/JekyllNet-linux-x64.tar.gz
             ./artifacts/SHA256SUMS.txt
             ./artifacts/nupkg/*.nupkg
             ./artifacts/winget/JekyllNet.JekyllNet/${{ steps.version.outputs.package_version }}/*.yaml
@@ -124,5 +159,6 @@ jobs:
           path: |
             ./artifacts/nupkg
             ./artifacts/JekyllNet-win-x64.zip
+            ./artifacts/JekyllNet-linux-x64.tar.gz
             ./artifacts/SHA256SUMS.txt
             ./artifacts/winget
