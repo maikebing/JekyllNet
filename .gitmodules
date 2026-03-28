@@ -4,3 +4,18 @@
 [submodule "profile"]
 	path = profile
 	url = https://github.com/JekyllNet/.github.git
+[submodule "themes/jekyll-theme-chirpy"]
+	path = themes/jekyll-theme-chirpy
+	url = https://github.com/JekyllNet/jekyll-theme-chirpy.git
+[submodule "themes/minimal-mistakes"]
+	path = themes/minimal-mistakes
+	url = https://github.com/JekyllNet/minimal-mistakes.git
+[submodule "themes/al-folio"]
+	path = themes/al-folio
+	url = https://github.com/JekyllNet/al-folio.git
+[submodule "themes/jekyll-TeXt-theme"]
+	path = themes/jekyll-TeXt-theme
+	url = https://github.com/JekyllNet/jekyll-TeXt-theme.git
+[submodule "themes/just-the-docs"]
+	path = themes/just-the-docs
+	url = https://github.com/JekyllNet/just-the-docs.git
