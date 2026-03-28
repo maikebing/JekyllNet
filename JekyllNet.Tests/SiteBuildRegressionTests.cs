@@ -11,7 +11,6 @@ public sealed class SiteBuildRegressionTests
         Assert.Equal(
         [
             "2026/03/23/hello-world/index.html",
-            "_config.yml",
             "assets/css/site.css",
             "assets/scss/site.css",
             "docs/getting-started/index.html",
@@ -19,7 +18,6 @@ public sealed class SiteBuildRegressionTests
         ],
         TestInfrastructure.EnumerateRelativeFiles(actualDirectory));
 
-        TestInfrastructure.AssertRelativeFileMatches(sourceDirectory, actualDirectory, "_config.yml");
         TestInfrastructure.AssertRelativeFileMatches(sourceDirectory, actualDirectory, "assets/css/site.css");
 
         var homePage = TestInfrastructure.ReadNormalizedText(Path.Combine(actualDirectory, "index.html"));
@@ -79,7 +77,7 @@ public sealed class SiteBuildRegressionTests
         var assetFiles = Directory.EnumerateFiles(Path.Combine(sourceDirectory, "assets"), "*", SearchOption.AllDirectories)
             .Select(path => Path.GetRelativePath(sourceDirectory, path).Replace('\\', '/'));
 
-        return ["_config.yml", "CNAME", .. assetFiles.OrderBy(path => path, StringComparer.Ordinal)];
+        return ["CNAME", .. assetFiles.OrderBy(path => path, StringComparer.Ordinal)];
     }
 
     private static string GetMarkdownOutputPath(string relativePath)
