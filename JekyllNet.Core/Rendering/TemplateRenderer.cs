@@ -87,6 +87,10 @@ public sealed partial class TemplateRenderer
                     ExecuteCaptureBlock(template, tagContent, scope, includes, ref index);
                     break;
 
+                case "comment":
+                    index = ExtractBlockBody(template, index, "comment", "endcomment", out _);
+                    break;
+
                 case "case":
                     output.Append(RenderCaseBlock(template, tagContent, scope, includes, ref index));
                     break;
@@ -1013,7 +1017,8 @@ public sealed partial class TemplateRenderer
 
     private static string TrimQuotes(string value)
     {
-        if ((value.StartsWith('"') && value.EndsWith('"')) || (value.StartsWith('\'') && value.EndsWith('\'')))
+        if (value.Length >= 2
+            && ((value.StartsWith('"') && value.EndsWith('"')) || (value.StartsWith('\'') && value.EndsWith('\''))))
         {
             return value[1..^1];
         }

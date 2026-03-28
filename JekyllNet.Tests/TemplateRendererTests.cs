@@ -369,6 +369,49 @@ public sealed class TemplateRendererTests
     }
 
     [Fact]
+    public void ReplaceFilter_DoesNotThrowOnDanglingQuoteArgument()
+    {
+        const string template = """
+            {{ page.title | replace: "'", "" }}
+            """;
+
+        var output = _renderer.Render(template, new Dictionary<string, object?>
+        {
+            ["page"] = new Dictionary<string, object?>
+            {
+                ["title"] = "It's working"
+            }
+        });
+
+        Assert.Contains("Its working", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CommentBlock_SkipsNestedLiquidContent()
+    {
+        const string template = """
+            {% comment %}
+            {% include hidden.html %}
+            {{ page.title }}
+            {% endcomment %}
+            visible
+            """;
+
+        var output = _renderer.Render(template, new Dictionary<string, object?>
+        {
+            ["page"] = new Dictionary<string, object?>
+            {
+                ["title"] = "Hidden"
+            }
+        }, new Dictionary<string, string>
+        {
+            ["hidden.html"] = "should-not-render"
+        });
+
+        Assert.Equal("visible", output.Trim());
+    }
+
+    [Fact]
     public void Where_WithSinglePropertyArgument_FiltersTruthyItems()
     {
         const string template = """

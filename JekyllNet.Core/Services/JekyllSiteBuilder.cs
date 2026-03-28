@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using DartSassHost;
+using JavaScriptEngineSwitcher.Core;
+using JavaScriptEngineSwitcher.Jint;
 using Markdig;
 using JekyllNet.Core.Models;
 using JekyllNet.Core.Parsers;
@@ -16,6 +18,7 @@ public sealed class JekyllSiteBuilder
     private readonly FrontMatterParser _frontMatterParser = new();
     private readonly TemplateRenderer _templateRenderer = new();
     private readonly IDeserializer _yamlDeserializer = new DeserializerBuilder().Build();
+    private static int _sassEngineRegistered;
 
     public async Task BuildAsync(JekyllSiteOptions options, CancellationToken cancellationToken = default)
     {
@@ -35,9 +38,11 @@ public sealed class JekyllSiteBuilder
         Directory.CreateDirectory(options.DestinationDirectory);
 
         var siteConfig = await LoadConfigAsync(options.SourceDirectory, cancellationToken);
-        var data = await LoadDataAsync(options.SourceDirectory, options, cancellationToken);
-        var layouts = await LoadNamedTemplatesAsync(options.SourceDirectory, options.Compatibility.LayoutsDirectoryName, cancellationToken);
-        var includes = await LoadNamedTemplatesAsync(options.SourceDirectory, options.Compatibility.IncludesDirectoryName, cancellationToken);
+        var inheritedThemeDirectories = ResolveInheritedThemeDirectories(options.SourceDirectory);
+        var templateDirectories = inheritedThemeDirectories.Concat([options.SourceDirectory]).ToArray();
+        var data = await LoadDataAsync(templateDirectories, options, cancellationToken);
+        var layouts = await LoadNamedTemplatesAsync(templateDirectories, options.Compatibility.LayoutsDirectoryName, cancellationToken);
+        var includes = await LoadNamedTemplatesAsync(templateDirectories, options.Compatibility.IncludesDirectoryName, cancellationToken);
         var markdownPipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
         var items = await DiscoverContentItemsAsync(options.SourceDirectory, siteConfig, options, cancellationToken);
@@ -79,7 +84,7 @@ public sealed class JekyllSiteBuilder
         var posts = items.Where(x => x.IsPost).OrderByDescending(x => x.Date).ToList();
         var paginatedItems = CreatePaginationItems(items, posts, siteConfig, options);
         items.AddRange(paginatedItems);
-        var staticFiles = await DiscoverStaticFilesAsync(options.SourceDirectory, siteConfig, items, options, cancellationToken);
+        var staticFiles = await DiscoverStaticFilesAsync(options.SourceDirectory, inheritedThemeDirectories, siteConfig, items, options, cancellationToken);
         var collections = items
             .Where(x => !string.IsNullOrWhiteSpace(x.Collection))
             .GroupBy(x => x.Collection, StringComparer.OrdinalIgnoreCase)
@@ -113,7 +118,14 @@ public sealed class JekyllSiteBuilder
             await File.WriteAllTextAsync(destinationPath, rendered, cancellationToken);
         }
 
-        await CompileSassAsync(options.SourceDirectory, options.DestinationDirectory, options, cancellationToken);
+        await CompileSassAsync(
+            options.SourceDirectory,
+            inheritedThemeDirectories,
+            options.DestinationDirectory,
+            options,
+            context.SiteConfig,
+            context.Includes,
+            cancellationToken);
         await CopyStaticFilesAsync(options.DestinationDirectory, staticFiles, context, cancellationToken);
     }
 
@@ -162,9 +174,9 @@ public sealed class JekyllSiteBuilder
         var isPost = isDraft || relativePath.StartsWith(options.Compatibility.PostsDirectoryName + "/", StringComparison.OrdinalIgnoreCase);
         var collection = ResolveCollectionName(relativePath, isPost, collections);
         var date = ResolveDate(relativePath, frontMatter, isPost, isDraft);
-        var url = ResolvePermalink(relativePath, frontMatter, date, collection, isPost, siteConfig);
         var tags = ReadStringList(frontMatter, "tags");
         var categories = ReadStringList(frontMatter, "categories");
+        var url = ResolvePermalink(relativePath, frontMatter, date, collection, tags, categories, isPost, siteConfig, options);
 
         return new JekyllContentItem
         {
@@ -561,7 +573,7 @@ public sealed class JekyllSiteBuilder
         }
 
         var footerHtml = BuildAutomaticFooterHtml(siteConfig, pageData);
-        var analyticsHtml = BuildAnalyticsHtml(siteConfig);
+        var analyticsHtml = BuildAnalyticsHtml(siteConfig, pageData);
         if (string.IsNullOrWhiteSpace(footerHtml) && string.IsNullOrWhiteSpace(analyticsHtml))
         {
             return html;
@@ -697,31 +709,78 @@ public sealed class JekyllSiteBuilder
 """;
     }
 
-private static string BuildAnalyticsHtml(IReadOnlyDictionary<string, object?> siteConfig)
+private static string BuildAnalyticsHtml(
+        IReadOnlyDictionary<string, object?> siteConfig,
+        IReadOnlyDictionary<string, object?>? pageData)
     {
         var snippets = new List<string>();
 
-        var googleAnalyticsId = ReadConfigString(
+        if (pageData is not null && ReadBooleanValue(pageData, "analytics") is false)
+        {
+            return string.Empty;
+        }
+
+        var analyticsProvider = ReadScalarConfigString(siteConfig, "analytics.provider");
+        var googleAnalyticsId = ReadGoogleAnalyticsTrackingId(siteConfig);
+        var googleAnonymizeIp = ReadConfigBoolean(
             siteConfig,
-            "analytics.google",
-            "analytics.google_analytics",
-            "google_analytics",
-            "google");
+            "analytics.google.anonymize_ip",
+            "analytics.google.anonymizeIp");
+
         if (!string.IsNullOrWhiteSpace(googleAnalyticsId))
         {
             var escapedId = EscapeJavaScriptString(googleAnalyticsId);
-            snippets.Add($$"""
+            if (string.Equals(analyticsProvider, "google-universal", StringComparison.OrdinalIgnoreCase))
+            {
+                snippets.Add($$"""
+<script>
+window.ga=function(){ga.q.push(arguments)};ga.q=[];ga.l=+new Date;
+ga('create','{{escapedId}}','auto');
+ga('set', 'anonymizeIp', {{(googleAnonymizeIp ?? false).ToString().ToLowerInvariant()}});
+ga('send','pageview');
+</script>
+<script src="https://www.google-analytics.com/analytics.js" async></script>
+""");
+            }
+            else if (string.Equals(analyticsProvider, "google", StringComparison.OrdinalIgnoreCase))
+            {
+                snippets.Add($$"""
+<script>
+var _gaq = window._gaq || [];
+window._gaq = _gaq;
+_gaq.push(['_setAccount', '{{escapedId}}']);
+{{(googleAnonymizeIp is true ? "_gaq.push(['_gat._anonymizeIp']);" : string.Empty)}}
+_gaq.push(['_trackPageview']);
+
+(function() {
+  var ga = document.createElement('script');
+  ga.type = 'text/javascript';
+  ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(ga, s);
+})();
+</script>
+""");
+            }
+            else
+            {
+                var configArguments = googleAnonymizeIp is null
+                    ? $"'{escapedId}'"
+                    : $"'{escapedId}', {{ 'anonymize_ip': {(googleAnonymizeIp.Value).ToString().ToLowerInvariant()} }}";
+                snippets.Add($$"""
 <script async src="https://www.googletagmanager.com/gtag/js?id={{HtmlEncode(googleAnalyticsId)}}"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', '{{escapedId}}');
+gtag('config', {{configArguments}});
 </script>
 """);
+            }
         }
 
-        var baiduAnalyticsId = ReadConfigString(
+        var baiduAnalyticsId = ReadScalarConfigString(
             siteConfig,
             "analytics.baidu",
             "analytics.baidu_tongji",
@@ -744,7 +803,7 @@ window._hmt = _hmt;
 """);
         }
 
-        var cnzzAnalyticsId = ReadConfigString(
+        var cnzzAnalyticsId = ReadScalarConfigString(
             siteConfig,
             "analytics.cnzz",
             "analytics.umeng",
@@ -850,9 +909,20 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
     {
         var result = ReadConfigDictionary(siteConfig, "analytics");
 
-        SetIfPresent(result, "google", ReadConfigString(siteConfig, "analytics.google", "analytics.google_analytics", "google_analytics", "google"));
-        SetIfPresent(result, "baidu", ReadConfigString(siteConfig, "analytics.baidu", "analytics.baidu_tongji", "baidu", "baidu_tongji"));
-        SetIfPresent(result, "cnzz", ReadConfigString(siteConfig, "analytics.cnzz", "analytics.umeng", "cnzz", "umeng"));
+        if (!result.ContainsKey("google"))
+        {
+            SetIfPresent(result, "google", ReadScalarConfigString(siteConfig, "analytics.google", "analytics.google_analytics", "google_analytics", "google"));
+        }
+
+        if (!result.ContainsKey("baidu"))
+        {
+            SetIfPresent(result, "baidu", ReadScalarConfigString(siteConfig, "analytics.baidu", "analytics.baidu_tongji", "baidu", "baidu_tongji"));
+        }
+
+        if (!result.ContainsKey("cnzz"))
+        {
+            SetIfPresent(result, "cnzz", ReadScalarConfigString(siteConfig, "analytics.cnzz", "analytics.umeng", "cnzz", "umeng"));
+        }
 
         var la = Build51LaConfiguration(siteConfig);
         if (la.Count > 0)
@@ -892,6 +962,39 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         SetBooleanIfPresent(result, "screenRecord", ReadConfigBoolean(siteConfig, "analytics.51la.screenRecord", "analytics.51la.screen_record", "analytics.51_la.screenRecord", "analytics.51_la.screen_record"));
 
         return result;
+    }
+
+    private static string? ReadGoogleAnalyticsTrackingId(IReadOnlyDictionary<string, object?> siteConfig)
+        => ReadScalarConfigString(
+            siteConfig,
+            "analytics.google.tracking_id",
+            "analytics.google.measurement_id",
+            "analytics.google_analytics",
+            "google_analytics",
+            "analytics.google",
+            "google");
+
+    private static string? ReadScalarConfigString(IReadOnlyDictionary<string, object?> siteConfig, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (!TryResolveObject(siteConfig, key, out var value)
+                || value is null
+                || value is IEnumerable<KeyValuePair<string, object?>>
+                || value is System.Collections.IDictionary
+                || value is System.Collections.IEnumerable and not string)
+            {
+                continue;
+            }
+
+            var text = value.ToString()?.Trim();
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                return text;
+            }
+        }
+
+        return null;
     }
 
     private static object? ReadConfigValue(IReadOnlyDictionary<string, object?> siteConfig, params string[] keys)
@@ -1596,28 +1699,68 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
 
     private async Task<List<JekyllStaticFile>> DiscoverStaticFilesAsync(
         string sourceDirectory,
+        IReadOnlyList<string> inheritedThemeDirectories,
         Dictionary<string, object?> siteConfig,
         IReadOnlyCollection<JekyllContentItem> items,
         JekyllSiteOptions options,
         CancellationToken cancellationToken)
     {
-        var result = new List<JekyllStaticFile>();
+        var result = new Dictionary<string, JekyllStaticFile>(StringComparer.OrdinalIgnoreCase);
         var renderedContentPaths = items.Select(x => x.RelativePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var collectionDefinitions = ReadCollectionDefinitions(siteConfig, options);
 
-        foreach (var file in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        foreach (var themeDirectory in inheritedThemeDirectories)
+        {
+            await AddStaticFilesFromDirectoryAsync(
+                themeDirectory,
+                includeAllFiles: false,
+                renderedContentPaths,
+                collectionDefinitions,
+                siteConfig,
+                options,
+                cancellationToken,
+                result);
+        }
+
+        await AddStaticFilesFromDirectoryAsync(
+            sourceDirectory,
+            includeAllFiles: true,
+            renderedContentPaths,
+            collectionDefinitions,
+            siteConfig,
+            options,
+            cancellationToken,
+            result);
+
+        return result.Values.ToList();
+    }
+
+    private async Task AddStaticFilesFromDirectoryAsync(
+        string rootDirectory,
+        bool includeAllFiles,
+        IReadOnlySet<string> renderedContentPaths,
+        HashSet<string> collectionDefinitions,
+        Dictionary<string, object?> siteConfig,
+        JekyllSiteOptions options,
+        CancellationToken cancellationToken,
+        Dictionary<string, JekyllStaticFile> result)
+    {
+        foreach (var file in EnumerateStaticCandidateFiles(rootDirectory, includeAllFiles))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var relativePath = Path.GetRelativePath(sourceDirectory, file).Replace('\\', '/');
-            if (ShouldSkip(relativePath, siteConfig, options) || renderedContentPaths.Contains(relativePath) || IsSassFile(file))
+            var relativePath = Path.GetRelativePath(rootDirectory, file).Replace('\\', '/');
+            if (ShouldSkip(relativePath, siteConfig, options)
+                || ShouldSkipStaticFile(relativePath, collectionDefinitions, options)
+                || renderedContentPaths.Contains(relativePath)
+                || IsSassFile(file))
             {
                 continue;
             }
 
             var hasFrontMatter = false;
             var content = string.Empty;
-            var frontMatter = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, object?> frontMatter;
 
             if (IsTextStaticFile(file))
             {
@@ -1632,7 +1775,7 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
                 frontMatter = ApplyFrontMatterDefaults(relativePath, new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase), siteConfig, collectionDefinitions, options);
             }
 
-            result.Add(new JekyllStaticFile
+            result[relativePath] = new JekyllStaticFile
             {
                 SourcePath = file,
                 RelativePath = relativePath,
@@ -1641,10 +1784,8 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
                 Content = content,
                 FrontMatter = frontMatter,
                 HasFrontMatter = hasFrontMatter
-            });
+            };
         }
-
-        return result;
     }
 
     private async Task CopyStaticFilesAsync(
@@ -1682,6 +1823,115 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         }
     }
 
+    private static IReadOnlyList<string> ResolveInheritedThemeDirectories(string sourceDirectory)
+    {
+        var result = new List<string>();
+        var current = Directory.GetParent(Path.GetFullPath(sourceDirectory));
+
+        while (current is not null)
+        {
+            if (DirectoryContainsThemeArtifacts(current.FullName))
+            {
+                result.Add(current.FullName);
+            }
+
+            if (Directory.Exists(Path.Combine(current.FullName, ".git")) || File.Exists(Path.Combine(current.FullName, ".git")))
+            {
+                break;
+            }
+
+            current = current.Parent;
+        }
+
+        result.Reverse();
+        return result;
+    }
+
+    private static bool DirectoryContainsThemeArtifacts(string directory)
+        => Directory.Exists(Path.Combine(directory, "_layouts"))
+           || Directory.Exists(Path.Combine(directory, "_includes"))
+           || Directory.Exists(Path.Combine(directory, "_data"))
+           || Directory.Exists(Path.Combine(directory, "_sass"))
+           || Directory.Exists(Path.Combine(directory, "assets"));
+
+    private static IEnumerable<string> EnumerateStaticCandidateFiles(string rootDirectory, bool includeAllFiles)
+    {
+        if (includeAllFiles)
+        {
+            return Directory.EnumerateFiles(rootDirectory, "*", SearchOption.AllDirectories);
+        }
+
+        var assetsDirectory = Path.Combine(rootDirectory, "assets");
+        return Directory.Exists(assetsDirectory)
+            ? Directory.EnumerateFiles(assetsDirectory, "*", SearchOption.AllDirectories)
+            : [];
+    }
+
+    private static IEnumerable<string> EnumerateSassEntryFiles(
+        string rootDirectory,
+        bool includeAllFiles,
+        IReadOnlyDictionary<string, object?> siteConfig,
+        JekyllSiteOptions options)
+    {
+        return EnumerateStaticCandidateFiles(rootDirectory, includeAllFiles)
+            .Where(IsSassFile)
+            .Where(file =>
+            {
+                var relative = Path.GetRelativePath(rootDirectory, file).Replace('\\', '/');
+                var fileName = Path.GetFileName(relative);
+                return !fileName.StartsWith("_", StringComparison.Ordinal) && !ShouldSkip(relative, siteConfig, options);
+            });
+    }
+
+    private static bool ShouldSkipStaticFile(string relativePath, HashSet<string> collectionDefinitions, JekyllSiteOptions options)
+    {
+        var normalized = relativePath.Replace('\\', '/').TrimStart('/');
+        if (normalized.Length == 0)
+        {
+            return false;
+        }
+
+        var fileName = Path.GetFileName(normalized);
+        if (fileName.StartsWith("_config", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var firstSegment = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(firstSegment))
+        {
+            return false;
+        }
+
+        if (string.Equals(firstSegment, "_drafts", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(firstSegment, options.Compatibility.PostsDirectoryName, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return firstSegment.StartsWith('_')
+            && collectionDefinitions.Contains(firstSegment[1..]);
+    }
+
+    private static void EnsureSassEngineRegistered()
+    {
+        if (Interlocked.Exchange(ref _sassEngineRegistered, 1) == 1)
+        {
+            return;
+        }
+
+        var switcher = JsEngineSwitcher.Current;
+        if (!switcher.EngineFactories.Any(factory => string.Equals(factory.EngineName, JintJsEngine.EngineName, StringComparison.OrdinalIgnoreCase)))
+        {
+            switcher.EngineFactories.AddJint();
+        }
+
+        if (string.IsNullOrWhiteSpace(switcher.DefaultEngineName))
+        {
+            switcher.DefaultEngineName = JintJsEngine.EngineName;
+        }
+    }
+
     private async Task<Dictionary<string, object?>> LoadConfigAsync(string sourceDirectory, CancellationToken cancellationToken)
     {
         var path = Path.Combine(sourceDirectory, "_config.yml");
@@ -1698,99 +1948,161 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
             StringComparer.OrdinalIgnoreCase);
     }
 
-    private async Task<Dictionary<string, string>> LoadNamedTemplatesAsync(string sourceDirectory, string directoryName, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, string>> LoadNamedTemplatesAsync(
+        IEnumerable<string> sourceDirectories,
+        string directoryName,
+        CancellationToken cancellationToken)
     {
-        var directory = Path.Combine(sourceDirectory, directoryName);
-        if (!Directory.Exists(directory))
-        {
-            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        }
-
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var file in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))
+        foreach (var sourceDirectory in sourceDirectories)
         {
-            var relativeName = Path.GetRelativePath(directory, file).Replace('\\', '/');
-            var content = await File.ReadAllTextAsync(file, cancellationToken);
-            result[relativeName] = content;
-            result[Path.GetFileName(relativeName)] = content;
-            result[Path.GetFileNameWithoutExtension(relativeName)] = content;
-        }
-
-        return result;
-    }
-
-    private async Task<Dictionary<string, object?>> LoadDataAsync(string sourceDirectory, JekyllSiteOptions options, CancellationToken cancellationToken)
-    {
-        var dataDirectory = Path.Combine(sourceDirectory, options.Compatibility.DataDirectoryName);
-        if (!Directory.Exists(dataDirectory))
-        {
-            return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var file in Directory.EnumerateFiles(dataDirectory, "*.*", SearchOption.AllDirectories))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var relativeName = Path.GetRelativePath(dataDirectory, file).Replace('\\', '/');
-            var key = Path.ChangeExtension(relativeName, null)?.Replace('/', '.');
-            var extension = Path.GetExtension(file);
-            var text = await File.ReadAllTextAsync(file, cancellationToken);
-
-            object? value = extension.ToLowerInvariant() switch
+            var directory = Path.Combine(sourceDirectory, directoryName);
+            if (!Directory.Exists(directory))
             {
-                ".yml" or ".yaml" => _yamlDeserializer.Deserialize<object?>(text),
-                ".json" => text,
-                _ => text
-            };
+                continue;
+            }
 
-            if (!string.IsNullOrWhiteSpace(key))
+            foreach (var file in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))
             {
-                SetNestedValue(result, key, NormalizeDataValue(value));
+                var relativeName = Path.GetRelativePath(directory, file).Replace('\\', '/');
+                var content = await File.ReadAllTextAsync(file, cancellationToken);
+                result[relativeName] = content;
+                result[Path.GetFileName(relativeName)] = content;
+                result[Path.GetFileNameWithoutExtension(relativeName)] = content;
             }
         }
 
         return result;
     }
 
-    private async Task CompileSassAsync(string sourceDirectory, string destinationDirectory, JekyllSiteOptions options, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, object?>> LoadDataAsync(
+        IEnumerable<string> sourceDirectories,
+        JekyllSiteOptions options,
+        CancellationToken cancellationToken)
+    {
+        var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var sourceDirectory in sourceDirectories)
+        {
+            var dataDirectory = Path.Combine(sourceDirectory, options.Compatibility.DataDirectoryName);
+            if (!Directory.Exists(dataDirectory))
+            {
+                continue;
+            }
+
+            foreach (var file in Directory.EnumerateFiles(dataDirectory, "*.*", SearchOption.AllDirectories))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var relativeName = Path.GetRelativePath(dataDirectory, file).Replace('\\', '/');
+                var key = Path.ChangeExtension(relativeName, null)?.Replace('/', '.');
+                var extension = Path.GetExtension(file);
+                var text = await File.ReadAllTextAsync(file, cancellationToken);
+
+                object? value = extension.ToLowerInvariant() switch
+                {
+                    ".yml" or ".yaml" => _yamlDeserializer.Deserialize<object?>(text),
+                    ".json" => text,
+                    _ => text
+                };
+
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    SetNestedValue(result, key, NormalizeDataValue(value));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private async Task CompileSassAsync(
+        string sourceDirectory,
+        IReadOnlyList<string> inheritedThemeDirectories,
+        string destinationDirectory,
+        JekyllSiteOptions options,
+        IReadOnlyDictionary<string, object?> siteVariables,
+        IReadOnlyDictionary<string, string> includes,
+        CancellationToken cancellationToken)
     {
         var siteConfig = await LoadConfigAsync(sourceDirectory, cancellationToken);
-        var sassFiles = Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
-            .Where(IsSassFile)
-            .Where(file =>
+        var sassFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var directory in inheritedThemeDirectories.Concat([sourceDirectory]))
+        {
+            foreach (var file in EnumerateSassEntryFiles(directory, directory == sourceDirectory, siteConfig, options))
             {
-                var relative = Path.GetRelativePath(sourceDirectory, file).Replace('\\', '/');
-                var fileName = Path.GetFileName(relative);
-                return !fileName.StartsWith("_", StringComparison.Ordinal) && !ShouldSkip(relative, siteConfig, options);
-            })
-            .ToList();
+                var relative = Path.GetRelativePath(directory, file).Replace('\\', '/');
+                sassFiles[relative] = file;
+            }
+        }
 
         if (sassFiles.Count == 0)
         {
             return;
         }
 
+        EnsureSassEngineRegistered();
+
+        var includePaths = inheritedThemeDirectories
+            .Concat([sourceDirectory])
+            .Select(directory => Path.Combine(directory, "_sass"))
+            .Where(Directory.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
         var compiler = new SassCompiler();
-        foreach (var file in sassFiles)
+
+        foreach (var pair in sassFiles)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var relative = Path.GetRelativePath(sourceDirectory, file).Replace('\\', '/');
+            var relative = pair.Key;
+            var file = pair.Value;
             var cssRelative = Path.ChangeExtension(relative, ".css")!;
             var destinationPath = Path.Combine(destinationDirectory, cssRelative.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            var renderedSource = await RenderSassSourceAsync(file, relative, siteVariables, includes, cancellationToken);
             try
             {
-                var result = compiler.CompileFile(file);
+                var result = compiler.Compile(renderedSource, file, destinationPath, sourceMapPath: null, options: new CompilationOptions
+                {
+                    IncludePaths = includePaths
+                });
                 await File.WriteAllTextAsync(destinationPath, result.CompiledContent, cancellationToken);
             }
             catch (Exception)
             {
-                var fallbackContent = await File.ReadAllTextAsync(file, cancellationToken);
-                await File.WriteAllTextAsync(destinationPath, fallbackContent, cancellationToken);
+                await File.WriteAllTextAsync(destinationPath, renderedSource, cancellationToken);
             }
         }
+    }
+
+    private async Task<string> RenderSassSourceAsync(
+        string sourcePath,
+        string relativePath,
+        IReadOnlyDictionary<string, object?> siteVariables,
+        IReadOnlyDictionary<string, string> includes,
+        CancellationToken cancellationToken)
+    {
+        var source = await File.ReadAllTextAsync(sourcePath, cancellationToken);
+        var document = _frontMatterParser.Parse(source);
+        if (document.FrontMatter.Count == 0)
+        {
+            return source;
+        }
+
+        var page = new Dictionary<string, object?>(document.FrontMatter, StringComparer.OrdinalIgnoreCase)
+        {
+            ["path"] = relativePath,
+            ["url"] = "/" + Path.ChangeExtension(relativePath, ".css")!.Replace('\\', '/')
+        };
+        var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["page"] = page,
+            ["site"] = siteVariables,
+            ["content"] = document.Content
+        };
+
+        return _templateRenderer.Render(document.Content, variables, includes);
     }
 
     private static HashSet<string> ReadCollectionDefinitions(Dictionary<string, object?> siteConfig, JekyllSiteOptions options)
@@ -2202,19 +2514,29 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         Dictionary<string, object?> frontMatter,
         DateTimeOffset? date,
         string collection,
+        IReadOnlyList<string> tags,
+        IReadOnlyList<string> categories,
         bool isPost,
-        IReadOnlyDictionary<string, object?> siteConfig)
+        IReadOnlyDictionary<string, object?> siteConfig,
+        JekyllSiteOptions options)
     {
         if (frontMatter.TryGetValue("permalink", out var permalinkValue) && permalinkValue?.ToString() is { Length: > 0 } permalink)
         {
-            return NormalizePermalink(permalink, relativePath, date, collection);
+            return NormalizePermalink(permalink, relativePath, date, collection, tags, categories);
         }
 
         if (isPost
             && siteConfig.TryGetValue("permalink", out var sitePermalinkValue)
             && sitePermalinkValue?.ToString() is { Length: > 0 } sitePermalink)
         {
-            return NormalizePermalink(sitePermalink, relativePath, date, collection);
+            return NormalizePermalink(sitePermalink, relativePath, date, collection, tags, categories);
+        }
+
+        if (!string.IsNullOrWhiteSpace(collection)
+            && TryResolveObject(siteConfig, $"{options.Compatibility.CollectionsKey}.{collection}.permalink", out var collectionPermalinkValue)
+            && collectionPermalinkValue?.ToString() is { Length: > 0 } collectionPermalink)
+        {
+            return NormalizePermalink(collectionPermalink, relativePath, date, collection, tags, categories);
         }
 
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
@@ -2241,19 +2563,38 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         return $"/{fileNameWithoutExtension}/";
     }
 
-    private static string NormalizePermalink(string permalink, string relativePath, DateTimeOffset? date, string collection)
+    private static string NormalizePermalink(
+        string permalink,
+        string relativePath,
+        DateTimeOffset? date,
+        string collection,
+        IReadOnlyList<string> tags,
+        IReadOnlyList<string> categories)
     {
         var slug = ResolveSlug(relativePath);
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
         var resolvedDate = date ?? DateTimeOffset.MinValue;
+        var tokens = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [":title"] = slug,
+            [":slug"] = slug,
+            [":name"] = fileNameWithoutExtension,
+            [":path"] = ResolvePermalinkPath(relativePath, collection),
+            [":collection"] = collection,
+            [":categories"] = BuildPermalinkTaxonomyPath(categories),
+            [":tags"] = BuildPermalinkTaxonomyPath(tags),
+            [":year"] = resolvedDate.ToString("yyyy", CultureInfo.InvariantCulture),
+            [":month"] = resolvedDate.ToString("MM", CultureInfo.InvariantCulture),
+            [":day"] = resolvedDate.ToString("dd", CultureInfo.InvariantCulture)
+        };
 
-        var replaced = permalink
-            .Replace(":title", slug, StringComparison.Ordinal)
-            .Replace(":slug", slug, StringComparison.Ordinal)
-            .Replace(":collection", collection, StringComparison.Ordinal)
-            .Replace(":year", resolvedDate.ToString("yyyy", CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace(":month", resolvedDate.ToString("MM", CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace(":day", resolvedDate.ToString("dd", CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace('\\', '/');
+        var replaced = permalink.Replace('\\', '/');
+        foreach (var token in tokens)
+        {
+            replaced = replaced.Replace(token.Key, token.Value, StringComparison.Ordinal);
+        }
+
+        replaced = Regex.Replace(replaced, "/{2,}", "/");
 
         if (!replaced.StartsWith('/'))
         {
@@ -2266,6 +2607,67 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
         }
 
         return replaced;
+    }
+
+    private static string ResolvePermalinkPath(string relativePath, string collection)
+    {
+        var normalized = relativePath.Replace('\\', '/').Trim('/');
+        if (normalized.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var withoutExtension = Path.ChangeExtension(normalized, null)?.Replace('\\', '/') ?? normalized;
+        var segments = withoutExtension.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (segments.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        if (!string.IsNullOrWhiteSpace(collection))
+        {
+            var collectionDirectoryName = "_" + collection;
+            if (string.Equals(segments[0], collectionDirectoryName, StringComparison.OrdinalIgnoreCase))
+            {
+                segments.RemoveAt(0);
+            }
+        }
+
+        return string.Join('/', segments);
+    }
+
+    private static string BuildPermalinkTaxonomyPath(IReadOnlyList<string> values)
+        => string.Join('/', values.Select(SlugifyPermalinkSegment).Where(static value => value.Length > 0));
+
+    private static string SlugifyPermalinkSegment(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var slug = new System.Text.StringBuilder();
+        var previousWasHyphen = false;
+
+        foreach (var character in value.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                slug.Append(character);
+                previousWasHyphen = false;
+                continue;
+            }
+
+            if (previousWasHyphen)
+            {
+                continue;
+            }
+
+            slug.Append('-');
+            previousWasHyphen = true;
+        }
+
+        return slug.ToString().Trim('-');
     }
 
     private static bool ShouldIncludeItem(JekyllContentItem item, JekyllSiteOptions options)

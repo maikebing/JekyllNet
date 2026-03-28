@@ -16,6 +16,9 @@ public sealed class SiteBuilderBehaviorTests
         Assert.False(File.Exists(Path.Combine(outputDirectory, "2099", "01", "01", "future", "index.html")));
         Assert.False(File.Exists(Path.Combine(outputDirectory, "2000", "01", "03", "unpublished", "index.html")));
         Assert.False(File.Exists(Path.Combine(outputDirectory, "2000", "01", "04", "draft-entry", "index.html")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "_config.yml")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "_posts", "2099-01-01-future.md")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "_drafts", "draft-entry.md")));
     }
 
     [Fact]
@@ -500,6 +503,78 @@ public sealed class SiteBuilderBehaviorTests
     }
 
     [Fact]
+    public async Task Build_PreservesNestedAnalyticsConfiguration_AndUsesUniversalSnippet()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                analytics:
+                  provider: google-universal
+                  google:
+                    tracking_id: UA-TEST123
+                    anonymize_ip: true
+                """,
+            ["_layouts/default.html"] = """
+                <html>
+                <body>
+                {{ site.analytics.provider }}|{{ site.analytics.google.tracking_id }}
+                {{ content }}
+                </body>
+                </html>
+                """,
+            ["index.md"] = """
+                ---
+                layout: default
+                ---
+                Home
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory);
+        var output = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "index.html"));
+
+        Assert.Contains("google-universal|UA-TEST123", output, StringComparison.Ordinal);
+        Assert.Contains("https://www.google-analytics.com/analytics.js", output, StringComparison.Ordinal);
+        Assert.Contains("ga('create','UA-TEST123','auto');", output, StringComparison.Ordinal);
+        Assert.Contains("ga('set', 'anonymizeIp', true);", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.Collections.Generic.Dictionary", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Build_CompilesSassEntryFilesWithFrontMatterAndLiquidImports()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                theme_skin: sunrise
+                """,
+            ["_sass/_theme.scss"] = """
+                body { color: $brand; }
+                """,
+            ["_sass/skins/_sunrise.scss"] = """
+                $brand: #123456;
+                """,
+            ["assets/css/main.scss"] = """
+                ---
+                search: false
+                ---
+
+                @import "skins/{{ site.theme_skin }}";
+                @import "theme";
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory);
+        var output = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "assets", "css", "main.css"));
+
+        Assert.Contains("body", output, StringComparison.Ordinal);
+        Assert.Contains("#123456", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("@import", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{ site.theme_skin }}", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("---", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Build_AutoTranslatesMarkdownContent_WhenAiConfigured()
     {
         var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
@@ -931,6 +1006,101 @@ public sealed class SiteBuilderBehaviorTests
         var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, "blog", "2000", "01", "02", "custom-link", "index.html")));
+    }
+
+    [Fact]
+    public async Task Build_UsesCategoriesTokenInPostPermalinks()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                permalink: /:categories/:title/
+                """,
+            ["_layouts/default.html"] = """
+                {{ content }}
+                """,
+            ["_posts/2000-01-02-categorized-post.md"] = """
+                ---
+                layout: default
+                title: Categorized Post
+                categories:
+                  - release notes
+                  - v1
+                ---
+                categorized
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory);
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "release-notes", "v1", "categorized-post", "index.html")));
+    }
+
+    [Fact]
+    public async Task Build_UsesCollectionPermalinkPatternWithPathToken()
+    {
+        var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_config.yml"] = """
+                collections:
+                  docs:
+                    output: true
+                    permalink: /:collection/:path/
+                """,
+            ["_layouts/default.html"] = """
+                {{ content }}
+                """,
+            ["_docs/getting-started.md"] = """
+                ---
+                layout: default
+                ---
+                docs content
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(sourceDirectory);
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, "docs", "getting-started", "index.html")));
+    }
+
+    [Fact]
+    public async Task Build_UsesInheritedThemeArtifactsForNestedSourceDirectory()
+    {
+        var rootDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
+        {
+            ["_layouts/default.html"] = """
+                <html>
+                <head>{% include head.html %}</head>
+                <body>{{ content }}</body>
+                </html>
+                """,
+            ["_includes/head.html"] = """
+                <title>{{ site.title }}</title>
+                """,
+            ["_sass/_theme.scss"] = """
+                body { color: red; }
+                """,
+            ["assets/css/main.scss"] = """
+                @import "theme";
+                """,
+            ["docs/_config.yml"] = """
+                title: Nested Docs
+                """,
+            ["docs/index.md"] = """
+                ---
+                layout: default
+                ---
+                Hello nested docs
+                """
+        });
+
+        var outputDirectory = await TestInfrastructure.BuildSiteAsync(Path.Combine(rootDirectory, "docs"));
+        var html = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "index.html"));
+        var css = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "assets", "css", "main.css"));
+
+        Assert.Contains("<title>Nested Docs</title>", html, StringComparison.Ordinal);
+        Assert.Contains("Hello nested docs", html, StringComparison.Ordinal);
+        Assert.Contains("color: red", css, StringComparison.Ordinal);
     }
 
     [Fact]
