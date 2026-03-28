@@ -205,6 +205,27 @@ public sealed class TemplateRendererTests
     }
 
     [Fact]
+    public void RelativeAbsoluteFilters_ResolveMixedCaseNestedSiteKeys()
+    {
+        const string template = """
+            {{ '/docs/' | relative_url }}
+            {{ '/docs/' | absolute_url }}
+            """;
+
+        var output = _renderer.Render(template, new Dictionary<string, object?>
+        {
+            ["Site"] = new Dictionary<string, object?>
+            {
+                ["BaseUrl"] = "/Jekyll.Net",
+                ["Url"] = "https://example.com"
+            }
+        });
+
+        Assert.Contains("/Jekyll.Net/docs/", output, StringComparison.Ordinal);
+        Assert.Contains("https://example.com/Jekyll.Net/docs/", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Capture_RendersInnerTemplateAndStoresResult()
     {
         const string template = """

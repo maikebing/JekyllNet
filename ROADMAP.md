@@ -172,7 +172,7 @@
 
 ### 🔭 长期探索
 
-- [ ] 💡 VS Code 本地预览体验
+- [ ] 💡 VS Code 中新增一个扩展， 辅助项目使用jekyllnet ，并能支持本地预览体验
 - [ ] 实现GitHub Action 构建， 发布Github Action 
 - [ ] 💡 Visual Studio 预览 / 构建期集成
 - [ ] 💡 `new -t` 模板初始化

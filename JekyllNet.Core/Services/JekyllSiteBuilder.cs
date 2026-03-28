@@ -947,9 +947,15 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
 
     private static Dictionary<string, object?> ReadConfigDictionary(IReadOnlyDictionary<string, object?> siteConfig, string key)
     {
-        if (TryResolveObject(siteConfig, key, out var value) && value is Dictionary<string, object?> dictionary)
+        if (TryResolveObject(siteConfig, key, out var value))
         {
-            return new Dictionary<string, object?>(dictionary, StringComparer.OrdinalIgnoreCase);
+            switch (value)
+            {
+                case Dictionary<string, object?> dictionary:
+                    return new Dictionary<string, object?>(dictionary, StringComparer.OrdinalIgnoreCase);
+                case IReadOnlyDictionary<string, object?> readOnlyDictionary:
+                    return new Dictionary<string, object?>(readOnlyDictionary, StringComparer.OrdinalIgnoreCase);
+            }
         }
 
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -1295,13 +1301,7 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
 
         foreach (var segment in path.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            if (current is IReadOnlyDictionary<string, object?> readOnlyDictionary && readOnlyDictionary.TryGetValue(segment, out var readOnlyNext))
-            {
-                current = readOnlyNext;
-                continue;
-            }
-
-            if (current is Dictionary<string, object?> dictionary && dictionary.TryGetValue(segment, out var next))
+            if (TryGetDictionaryValue(current, segment, out var next))
             {
                 current = next;
                 continue;
@@ -1313,6 +1313,35 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
 
         value = current;
         return true;
+    }
+
+    private static bool TryGetDictionaryValue(object? current, string key, out object? value)
+    {
+        switch (current)
+        {
+            case IReadOnlyDictionary<string, object?> readOnlyDictionary when readOnlyDictionary.TryGetValue(key, out var readOnlyNext):
+                value = readOnlyNext;
+                return true;
+
+            case Dictionary<string, object?> dictionary when dictionary.TryGetValue(key, out var dictionaryNext):
+                value = dictionaryNext;
+                return true;
+
+            case IEnumerable<KeyValuePair<string, object?>> pairs:
+                foreach (var pair in pairs)
+                {
+                    if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        value = pair.Value;
+                        return true;
+                    }
+                }
+
+                break;
+        }
+
+        value = null;
+        return false;
     }
 
     private static void SetIfPresent(Dictionary<string, object?> values, string key, string? value)
@@ -1424,7 +1453,7 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
     {
         foreach (var key in keys)
         {
-            if (values.TryGetValue(key, out var value) && value?.ToString() is { Length: > 0 } text)
+            if (TryGetDictionaryValue(values, key, out var value) && value?.ToString() is { Length: > 0 } text)
             {
                 return text.Trim();
             }
@@ -1437,7 +1466,7 @@ _czc.push(["_setAccount", "{{escapedId}}"]);
     {
         foreach (var key in keys)
         {
-            if (values.TryGetValue(key, out var value) && value is not null)
+            if (TryGetDictionaryValue(values, key, out var value) && value is not null)
             {
                 var parsed = TryConvertToBoolean(value);
                 if (parsed is not null)

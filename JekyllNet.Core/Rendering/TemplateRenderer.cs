@@ -1163,19 +1163,12 @@ public sealed partial class TemplateRenderer
 
         foreach (var segment in propertyPath.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            switch (current)
+            if (!TryGetDictionaryValue(current, segment, out var next))
             {
-                case IReadOnlyDictionary<string, object?> readOnlyDictionary when readOnlyDictionary.TryGetValue(segment, out var readOnlyNext):
-                    current = readOnlyNext;
-                    break;
-
-                case Dictionary<string, object?> dictionary when dictionary.TryGetValue(segment, out var dictionaryNext):
-                    current = dictionaryNext;
-                    break;
-
-                default:
-                    return null;
+                return null;
             }
+
+            current = next;
         }
 
         return current;
@@ -1203,13 +1196,7 @@ public sealed partial class TemplateRenderer
 
         foreach (var segment in path.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            if (current is IReadOnlyDictionary<string, object?> dict && dict.TryGetValue(segment, out var next))
-            {
-                current = next;
-                continue;
-            }
-
-            if (current is Dictionary<string, object?> raw && raw.TryGetValue(segment, out next))
+            if (TryGetDictionaryValue(current, segment, out var next))
             {
                 current = next;
                 continue;
@@ -1221,6 +1208,35 @@ public sealed partial class TemplateRenderer
 
         value = current;
         return true;
+    }
+
+    private static bool TryGetDictionaryValue(object? current, string key, out object? value)
+    {
+        switch (current)
+        {
+            case IReadOnlyDictionary<string, object?> readOnlyDictionary when readOnlyDictionary.TryGetValue(key, out var readOnlyNext):
+                value = readOnlyNext;
+                return true;
+
+            case Dictionary<string, object?> dictionary when dictionary.TryGetValue(key, out var dictionaryNext):
+                value = dictionaryNext;
+                return true;
+
+            case IEnumerable<KeyValuePair<string, object?>> pairs:
+                foreach (var pair in pairs)
+                {
+                    if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        value = pair.Value;
+                        return true;
+                    }
+                }
+
+                break;
+        }
+
+        value = null;
+        return false;
     }
 
     private static Dictionary<string, object?> ToLiquidObject(JekyllContentItem item)
