@@ -66,5 +66,18 @@ jobs:
 
 The repository does not publish a dedicated action tag yet, so the example uses `@main` for now. Move to a release tag once one is available.
 
+## Built-in Pages workflow in this repository
+
+This repository now also includes `.github/workflows/github-pages.yml`.
+
+That workflow:
+
+- builds `./docs` with the local JekyllNet action
+- uploads `./artifacts/docs-site` as the GitHub Pages artifact
+- deploys on pushes to `main`
+- runs on pull requests as a build check, without publishing
+
+It is wired to changes in `docs/**`, `JekyllNet.Cli/**`, `JekyllNet.Core/**`, `action.yml`, `JekyllNet.slnx`, and the workflow file itself, so documentation and generator changes both refresh the published site.
+
 The related workflow guidance is summarized in [CLI and Development Workflow](/en/blog/cli-workflow/).
 ---

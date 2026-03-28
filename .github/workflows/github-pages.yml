@@ -1,0 +1,67 @@
+name: github-pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - JekyllNet.Cli/**
+      - JekyllNet.Core/**
+      - action.yml
+      - JekyllNet.slnx
+      - .github/workflows/github-pages.yml
+  pull_request:
+    paths:
+      - docs/**
+      - JekyllNet.Cli/**
+      - JekyllNet.Core/**
+      - action.yml
+      - JekyllNet.slnx
+      - .github/workflows/github-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build docs with JekyllNet
+        uses: ./
+        with:
+          source: ./docs
+          destination: ./artifacts/docs-site
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./artifacts/docs-site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

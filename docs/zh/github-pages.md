@@ -64,5 +64,18 @@ jobs:
 
 今仓库尚未另发 action 版本 tag，故示例暂用 `@main`；待 release tag 可用时，再改钉其定版。
 
+## 仓库内置之 Pages workflow
+
+今仓库亦已具 `.github/workflows/github-pages.yml`。
+
+其所行者：
+
+- 以本仓库内之 JekyllNet action 构建 `./docs`
+- 将 `./artifacts/docs-site` 上传为 GitHub Pages artifact
+- 于推送至 `main` 时正式发布
+- 于 PR 中只做构建校验，不实际部署
+
+其触发范围含 `docs/**`、`JekyllNet.Cli/**`、`JekyllNet.Core/**`、`action.yml`、`JekyllNet.slnx` 与工作流自身；故文档之改，或生成器之改，皆可使 Pages 站点随之更新。
+
 更详之命令行与自动化说明，可参 [CLI 与开发工作流](/zh/blog/cli-workflow/)。
 ---

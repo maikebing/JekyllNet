@@ -119,6 +119,16 @@ baseurl: &quot;&quot;
           artifact-name: docs-site
 </code></pre>
 <p>The repository does not publish a dedicated action tag yet, so the example uses <code>@main</code> for now. Move to a release tag once one is available.</p>
+<h2 id="built-in-pages-workflow-in-this-repository">Built-in Pages workflow in this repository</h2>
+<p>This repository now also includes <code>.github/workflows/github-pages.yml</code>.</p>
+<p>That workflow:</p>
+<ul>
+<li>builds <code>./docs</code> with the local JekyllNet action</li>
+<li>uploads <code>./artifacts/docs-site</code> as the GitHub Pages artifact</li>
+<li>deploys on pushes to <code>main</code></li>
+<li>runs on pull requests as a build check, without publishing</li>
+</ul>
+<p>It is wired to changes in <code>docs/**</code>, <code>JekyllNet.Cli/**</code>, <code>JekyllNet.Core/**</code>, <code>action.yml</code>, <code>JekyllNet.slnx</code>, and the workflow file itself, so documentation and generator changes both refresh the published site.</p>
 <h2 id="the-related-workflow-guidance-is-summarized-in-cli-and-development-workflow">The related workflow guidance is summarized in <a href="/en/blog/cli-workflow/">CLI and Development Workflow</a>.</h2>
 
         </article>

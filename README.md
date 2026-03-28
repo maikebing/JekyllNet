@@ -116,12 +116,14 @@ GitHub 头像建议使用：
 
 - 📄 根目录 `action.yml`，可直接作为可复用 GitHub Action 使用
 - 📄 `.github/workflows/ci.yml`
+- 📄 `.github/workflows/github-pages.yml`
 - 📄 `.github/workflows/release-artifacts.yml`
 
 用途：
 
 - ⚙️ `action.yml`：在任意仓库中构建 JekyllNet 站点，并可选上传构建产物
 - ⚙️ `ci.yml`：测试、通过 action 构建 `docs` / `sample-site`、打包 dotnet tool
+- ⚙️ `github-pages.yml`：当 `docs` 或站点生成器相关代码变化时，构建 `docs` 并发布到 GitHub Pages
 - ⚙️ `release-artifacts.yml`：生成 `nupkg` 与 Windows portable zip，便于 Release 和 `winget`
 
 最小 workflow 示例：
@@ -151,6 +153,16 @@ jobs:
 ```
 
 当前仓库尚未打出专门的 action tag，因此示例先使用 `@main`；待首个 action release 发布后，建议改为固定版本 tag。
+
+如果是在本仓库发布 `docs` 到 GitHub Pages，可直接启用：
+
+- `.github/workflows/github-pages.yml`
+
+该 workflow 会：
+
+- 在 `main` 分支收到 `docs/**`、`JekyllNet.Cli/**`、`JekyllNet.Core/**`、`action.yml` 或工作流自身变更时自动触发
+- 在 PR 中执行构建校验，但不实际部署
+- 在推送到 `main` 后把 `./artifacts/docs-site` 发布到 GitHub Pages
 
 常用输入：
 

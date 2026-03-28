@@ -118,6 +118,16 @@ baseurl: &quot;&quot;
           artifact-name: docs-site
 </code></pre>
 <p>今仓库尚未另发 action 版本 tag，故示例暂用 <code>@main</code>；待 release tag 可用时，再改钉其定版。</p>
+<h2 id="pages-workflow">仓库内置之 Pages workflow</h2>
+<p>今仓库亦已具 <code>.github/workflows/github-pages.yml</code>。</p>
+<p>其所行者：</p>
+<ul>
+<li>以本仓库内之 JekyllNet action 构建 <code>./docs</code></li>
+<li>将 <code>./artifacts/docs-site</code> 上传为 GitHub Pages artifact</li>
+<li>于推送至 <code>main</code> 时正式发布</li>
+<li>于 PR 中只做构建校验，不实际部署</li>
+</ul>
+<p>其触发范围含 <code>docs/**</code>、<code>JekyllNet.Cli/**</code>、<code>JekyllNet.Core/**</code>、<code>action.yml</code>、<code>JekyllNet.slnx</code> 与工作流自身；故文档之改，或生成器之改，皆可使 Pages 站点随之更新。</p>
 <h2 id="cli">更详之命令行与自动化说明，可参 <a href="/zh/blog/cli-workflow/">CLI 与开发工作流</a>。</h2>
 
         </article>
