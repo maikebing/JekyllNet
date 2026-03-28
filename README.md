@@ -80,7 +80,7 @@ GitHub 头像建议使用：
 
 ## ✅ 回归命令
 
-运行完整测试与 snapshot 回归：
+运行完整测试与站点构建回归验证：
 
 `dotnet test .\JekyllNet.slnx`
 

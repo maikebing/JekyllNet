@@ -15,7 +15,7 @@ This repository-level docs source now does three jobs at once:
 
 - it gives first-time readers a clean project entry point
 - it provides a stable place for feature, configuration, and workflow documentation
-- it acts as a real build fixture protected by snapshot regression
+- it acts as a real build fixture covered by regression tests
 
 That combination is much more valuable than a detached design mock or a README-only explanation.
 

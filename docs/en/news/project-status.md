@@ -14,7 +14,7 @@ On March 25, 2026, JekyllNet reached an important public milestone: the project 
 - a proper `docs` source site in English and Chinese
 - blog articles organized by feature set, configuration, CLI workflow, and AI translation
 - `build`, `watch`, and `serve` CLI flows
-- golden output regression for both `docs` and `sample-site`
+- fixture-based build regression tests for both `docs` and `sample-site`
 - broader theme-facing filter coverage
 - stronger pagination and publishing semantics
 - AI-assisted translation with cache, incremental reuse, glossary support, and OpenAI-compatible provider support

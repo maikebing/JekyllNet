@@ -56,7 +56,7 @@ nav_key: "blog"
 - 按页禁用分页
 - Sass / SCSS 编译
 - 静态资源复制
-- `docs` 与 `sample-site` 之 golden output 回归
+- `docs` 与 `sample-site` 之基于 fixture 的构建回归测试
 
 ## 多语与 AI 辅助翻译
 

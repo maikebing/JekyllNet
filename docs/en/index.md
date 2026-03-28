@@ -34,7 +34,7 @@ stats:
   - label: "Primary host"
     value: "jekyllnet.help"
   - label: "Regression safety"
-    value: "Golden snapshots"
+    value: "Build regression tests"
 sections:
   - title: "What you can use today"
     description: "The current implementation is already broad enough for real docs sites and smaller content sites."
@@ -47,7 +47,7 @@ sections:
       - title: "Theme compatibility"
         description: "Nested layouts, includes, common Liquid control flow, high-value filters, permalink fallback, defaults, static file front matter, and Sass all work together."
       - title: "Site operations"
-        description: "CLI commands, snapshot regression, GitHub Actions examples, dotnet tool packaging metadata, and winget templates are now part of the repo story."
+        description: "CLI commands, site build regression tests, GitHub Actions examples, dotnet tool packaging metadata, and winget templates are now part of the repo story."
   - title: "Read by goal"
     description: "Pick the next page based on the job you want to finish."
     variant: "quick-links"

@@ -1,6 +1,6 @@
 ---
 title: "何以吾今须有一套 Pages 风格文档站"
-description: "此 docs 既为对外手册，亦为受 snapshot 所护之真实兼容性样本。"
+description: "此 docs 既为对外手册，亦为受构建回归测试所护之真实兼容性样本。"
 permalink: /zh/blog/design-goals/
 lang: "zh-CN"
 nav_key: "blog"
@@ -15,7 +15,7 @@ nav_key: "blog"
 
 - 为初识吾者立清晰入口
 - 为特性、配置、工作流诸文安其所
-- 作为真实站点 fixture，参与 snapshot 回归
+- 作为真实站点 fixture，参与构建回归测试
 
 比诸仅有 README，抑或脱离实现之设计稿，此法更足以随项目长久而进。
 

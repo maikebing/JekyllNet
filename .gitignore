@@ -48,6 +48,7 @@ packages/
 
 # Test and benchmark artifacts
 BenchmarkDotNet.Artifacts/
+JekyllNet.Tests/Snapshots/
 
 # OS files
 .DS_Store

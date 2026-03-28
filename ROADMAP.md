@@ -40,7 +40,7 @@
 - ✨ pagination 基线能力与结构化 `pagination.*` 配置
 - ✨ site 级 permalink fallback
 - ✨ `relative_url / absolute_url / markdownify / where / sort / map / compact / jsonify / slugify`
-- ✨ `docs` 与 `sample-site` golden output / snapshot 回归
+- ✨ `docs` 与 `sample-site` 站点构建回归测试
 - ✨ 多语言页面 `translation_links` 自动生成
 - ✨ AI 翻译基础管线
 - ✨ OpenAI / DeepSeek / Ollama / 任意 OpenAI-compatible 第三方 provider
@@ -56,8 +56,8 @@
 状态：`已完成并关闭`
 
 - [x] ✅ 自动化测试项目
-- [x] ✅ `sample-site` golden output / snapshot fixture
-- [x] ✅ `docs` golden output / snapshot fixture
+- [x] ✅ `sample-site` 站点构建回归测试
+- [x] ✅ `docs` 站点构建回归测试
 - [x] ✅ 面向 Liquid 语义的小型 fixture
 - [x] ✅ 固定回归命令与文档
 
@@ -154,7 +154,7 @@
 以下内容不是“功能废弃”，而是“路线图写法废弃”：
 
 - [x] ✅ “补更多 `_config.yml` 选项”这种无限扩张项
-- [x] ✅ 把已经完成的 snapshot 回归在多个 phase 里重复记账
+- [x] ✅ 把已经完成的回归测试在多个 phase 里重复记账
 - [x] ✅ 把 DevEx、分发、编辑器生态与核心兼容主线混在一个优先级里
 
 ## 🧭 不再阻塞主线的事项
@@ -203,7 +203,7 @@
 接下来不再以 “Phase 0 到 4 还没做完” 的方式推进，而是按下面的节奏继续：
 
 1. ✨ 只补明确、可回归的兼容缺口
-2. 📄 对 `README`、docs compatibility page、snapshot fixture 保持同步
+2. 📄 对 `README`、docs compatibility page 与测试说明保持同步
 3. 🛠️ 把 DevEx、分发和编辑器体验作为独立产品化方向推进
 
 一句话总结：

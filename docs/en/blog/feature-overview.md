@@ -56,7 +56,7 @@ The site-building layer also covers:
 - per-page pagination disable
 - Sass and SCSS compilation
 - static asset copying
-- golden output regression for both `sample-site` and `docs`
+- fixture-based build regression tests for both `sample-site` and `docs`
 
 ## Multilingual and AI-assisted docs
 

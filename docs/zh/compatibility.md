@@ -21,7 +21,7 @@ nav_key: "docs"
 | 发布语义 | 已成 | `drafts`、`future`、`unpublished`、嵌套 index permalink 与 excerpt 行为，今皆接入真实构建。 |
 | Pagination | 半成 | 已通 `paginate`、`paginate_path`、`pagination.per_page`、`pagination.path` 与按页禁用；然更多 Jekyll 边角，尚待细磨。 |
 | 多语文档 | 已成 | locale 级 defaults、自动 translation links 与 AI 辅助翻译工作流，今皆可用。 |
-| Snapshot 回归 | 已成 | `docs` 与 `sample-site` 皆有 golden output 回归之守。 |
+| 站点构建回归 | 已成 | `docs` 与 `sample-site` 皆有基于 fixture 的构建回归测试。 |
 | 插件生态 | 未取 | 第三方 Jekyll 插件兼容，今尚不在支持之界。 |
 
 ## 今已宜于何用

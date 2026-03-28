@@ -7,7 +7,7 @@ nav_key: "docs"
 ---
 # Deployment
 
-The repository now includes a `docs` directory shaped to work as a GitHub Pages style source site. It is also one of the project's golden regression fixtures, which makes it a useful reference for your own documentation repositories.
+The repository now includes a `docs` directory shaped to work as a GitHub Pages style source site. It also serves as one of the project's real build fixtures, which makes it a useful reference for your own documentation repositories.
 
 ## Directory role
 

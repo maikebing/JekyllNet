@@ -21,7 +21,7 @@ JekyllNet is not aiming to be a generic static site generator with a little Liqu
 | Publishing semantics | Done | `drafts`, `future`, `unpublished`, nested index permalink handling, and excerpt behavior are connected to real build output. |
 | Pagination | Partial | Baseline pagination works, including `paginate`, `paginate_path`, `pagination.per_page`, `pagination.path`, and per-page disable. Some Jekyll edge cases still need closer alignment. |
 | Multilingual docs | Done | Locale-aware defaults, automatic translation links, and AI-assisted translation workflows are available. |
-| Snapshot regression | Done | `sample-site` and `docs` are protected by golden output regression tests. |
+| Site build regression | Done | `sample-site` and `docs` are covered by fixture-based build regression tests. |
 | Plugin ecosystem | Not yet | Third-party Jekyll plugin compatibility is still outside the supported boundary. |
 
 ## What is already a good fit

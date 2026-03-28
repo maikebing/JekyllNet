@@ -26,7 +26,7 @@ The docs site also acts as a fixture for the generator itself. It exercises:
 - bilingual routing and translation links
 - layouts, includes, navigation, and footers
 - `_config.yml` defaults and localized UI labels
-- snapshot regression for generated output
+- fixture-based build regression tests for generated output
 
 ## What to read next
 

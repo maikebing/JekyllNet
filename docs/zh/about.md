@@ -26,5 +26,5 @@ nav_key: "about"
 - 中英双语路由与 translation links
 - layout、include、导航与页脚
 - `_config.yml` defaults 与多语 UI 文辞
-- snapshot 回归所护之生成结果
+- 基于 fixture 的构建回归测试所护之生成结果
 ---

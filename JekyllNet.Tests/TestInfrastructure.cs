@@ -39,34 +39,29 @@ internal static class TestInfrastructure
         return destinationDirectory;
     }
 
-    public static void AssertSnapshotDirectory(string expectedDirectory, string actualDirectory)
+    public static string[] EnumerateRelativeFiles(string directory)
     {
-        var expectedFiles = Directory.EnumerateFiles(expectedDirectory, "*", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(expectedDirectory, path).Replace('\\', '/'))
+        return Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(directory, path).Replace('\\', '/'))
             .OrderBy(path => path, StringComparer.Ordinal)
             .ToArray();
-        var actualFiles = Directory.EnumerateFiles(actualDirectory, "*", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(actualDirectory, path).Replace('\\', '/'))
-            .OrderBy(path => path, StringComparer.Ordinal)
-            .ToArray();
+    }
 
-        Assert.Equal(expectedFiles, actualFiles);
+    public static string ReadNormalizedText(string path)
+        => NormalizeLineEndings(File.ReadAllText(path, Encoding.UTF8));
 
-        foreach (var relativePath in expectedFiles)
+    public static void AssertRelativeFileMatches(string expectedRootDirectory, string actualRootDirectory, string relativePath)
+    {
+        var expectedPath = Path.Combine(expectedRootDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        var actualPath = Path.Combine(actualRootDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+        if (IsTextFile(relativePath))
         {
-            var expectedPath = Path.Combine(expectedDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
-            var actualPath = Path.Combine(actualDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
-
-            if (IsTextFile(relativePath))
-            {
-                var expectedText = NormalizeLineEndings(File.ReadAllText(expectedPath, Encoding.UTF8));
-                var actualText = NormalizeLineEndings(File.ReadAllText(actualPath, Encoding.UTF8));
-                Assert.Equal(expectedText, actualText);
-                continue;
-            }
-
-            Assert.Equal(File.ReadAllBytes(expectedPath), File.ReadAllBytes(actualPath));
+            Assert.Equal(ReadNormalizedText(expectedPath), ReadNormalizedText(actualPath));
+            return;
         }
+
+        Assert.Equal(File.ReadAllBytes(expectedPath), File.ReadAllBytes(actualPath));
     }
 
     public static string CreateSiteFixture(IReadOnlyDictionary<string, string> files)

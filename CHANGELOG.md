@@ -9,7 +9,7 @@
 ### ✨ Added
 
 - ✨ 新增 `build`、`watch`、`serve` 三条 CLI 工作流
-- ✨ 新增 `docs` 与 `sample-site` 的 golden output / snapshot 回归基线
+- ✨ 新增 `docs` 与 `sample-site` 的站点构建回归测试
 - ✨ 新增中英双语 docs 站点结构、博客栏目与新闻栏目
 - ✨ 新增 `dotnet tool` 打包元数据
 - ✨ 新增 GitHub Actions 构建与发布样例

@@ -7,7 +7,7 @@ nav_key: "docs"
 ---
 # 站点部署
 
-今仓库之 `docs`，已成一套可用于 GitHub Pages 之源站结构。其既为对外文档，亦为吾之 golden regression fixture 之一。
+今仓库之 `docs`，已成一套可用于 GitHub Pages 之源站结构。其既为对外文档，亦为吾之真实构建 fixture 之一。
 
 ## docs 之分工
 

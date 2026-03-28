@@ -34,7 +34,7 @@ stats:
   - label: "文档形制"
     value: "中英双语"
   - label: "回归之守"
-    value: "Golden Snapshot"
+    value: "站点构建回归测试"
 sections:
   - title: "今已可为何事"
     description: "吾之实现，今已足以支撑真实文档站、小型内容站，以及主题兼容之验证。"
@@ -47,7 +47,7 @@ sections:
       - title: "主题之道"
         description: "已通嵌套 Layout、Include、常见 Liquid 控制语法、高价值 Filters、defaults、静态文件 Front Matter 与 Sass。"
       - title: "工程之道"
-        description: "CLI、Snapshot 回归、GitHub Actions 示例、dotnet tool 打包元数据与 winget 模板，今皆在库中。"
+        description: "CLI、站点构建回归测试、GitHub Actions 示例、dotnet tool 打包元数据与 winget 模板，今皆在库中。"
   - title: "按志而入"
     description: "来者所求不同，其所当先观者亦异。"
     variant: "quick-links"
@@ -73,7 +73,7 @@ sections:
     section_class: "panel panel-section"
     items:
       - label: "特性总览"
-        description: "综述渲染、发布语义、分页、Filters 与回归之守。"
+        description: "综述渲染、发布语义、分页、Filters 与回归测试。"
         url: /zh/blog/feature-overview/
       - label: "配置指南"
         description: "分门别类而述 _config.yml 诸要。"
