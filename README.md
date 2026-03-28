@@ -186,13 +186,14 @@ jobs:
 - 在推送 `v*` tag 时自动触发，并以 tag 去掉前导 `v` 后的值作为包版本
 - 在手动触发时使用输入的 `version`
 - 先执行 `dotnet test`
-- 再执行 `dotnet pack` 并发布到 `https://api.nuget.org/v3/index.json`
-- 使用仓库 secret `NUGET_API_KEY`
+- 再执行 `dotnet pack`，并同时发布到 `https://api.nuget.org/v3/index.json` 与 GitHub Packages
+- 向 NuGet.org 发布时使用仓库 secret `NUGET_API_KEY`
+- 向 GitHub Packages 发布时使用 `GITHUB_TOKEN`
 
 示例：
 
 - 推送 tag `v0.1.1`
-- workflow 会发布 `JekyllNet.Tool` `0.1.1`
+- workflow 会把 `JekyllNet.Tool` `0.1.1` 同时发布到 NuGet.org 和 `https://nuget.pkg.github.com/<owner>/index.json`
 
 ## 🪄 winget
 

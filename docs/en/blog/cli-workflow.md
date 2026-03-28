@@ -56,7 +56,7 @@ The most useful inputs are `source`, `destination`, `drafts`, `future`, `unpubli
 
 ## NuGet publishing workflow
 
-The repository also now carries `.github/workflows/publish-dotnet-tool.yml` for publishing the CLI as the `JekyllNet.Tool` global tool package on NuGet.
+The repository also now carries `.github/workflows/publish-dotnet-tool.yml` for publishing the CLI as the `JekyllNet.Tool` global tool package to both NuGet.org and GitHub Packages.
 
 That workflow:
 
@@ -64,7 +64,8 @@ That workflow:
 - also supports manual dispatch with an explicit version input
 - runs `dotnet test` before packing
 - packs with the resolved version instead of relying on the static project file version
-- pushes to NuGet with the repository secret `NUGET_API_KEY`
+- pushes to NuGet.org with the repository secret `NUGET_API_KEY`
+- also pushes the same package to `https://nuget.pkg.github.com/<owner>/index.json` with `GITHUB_TOKEN`
 
 ## A practical local routine
 

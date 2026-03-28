@@ -115,14 +115,15 @@ dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 <p>The repository does not publish a dedicated action tag yet, so the example uses <code>@main</code> for now. Once the first action release exists, pin to that tag instead.</p>
 <p>The most useful inputs are <code>source</code>, <code>destination</code>, <code>drafts</code>, <code>future</code>, <code>unpublished</code>, <code>posts-per-page</code>, and the optional artifact upload controls.</p>
 <h2 id="nuget-publishing-workflow">NuGet publishing workflow</h2>
-<p>The repository also now carries <code>.github/workflows/publish-dotnet-tool.yml</code> for publishing the CLI as the <code>JekyllNet.Tool</code> global tool package on NuGet.</p>
+<p>The repository also now carries <code>.github/workflows/publish-dotnet-tool.yml</code> for publishing the CLI as the <code>JekyllNet.Tool</code> global tool package to both NuGet.org and GitHub Packages.</p>
 <p>That workflow:</p>
 <ul>
 <li>triggers on <code>v*</code> tags</li>
 <li>also supports manual dispatch with an explicit version input</li>
 <li>runs <code>dotnet test</code> before packing</li>
 <li>packs with the resolved version instead of relying on the static project file version</li>
-<li>pushes to NuGet with the repository secret <code>NUGET_API_KEY</code></li>
+<li>pushes to NuGet.org with the repository secret <code>NUGET_API_KEY</code></li>
+<li>also pushes the same package to <code>https://nuget.pkg.github.com/&lt;owner&gt;/index.json</code> with <code>GITHUB_TOKEN</code></li>
 </ul>
 <h2 id="a-practical-local-routine">A practical local routine</h2>
 <ol>

@@ -115,14 +115,15 @@ dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 <p>今仓库尚未另发 action 版本 tag，故示例暂用 <code>@main</code>；待首个 action release 既成，宜改钉其固定 tag。</p>
 <p>常用输入者，有 <code>source</code>、<code>destination</code>、<code>drafts</code>、<code>future</code>、<code>unpublished</code>、<code>posts-per-page</code>，以及可选之 artifact 上传配置。</p>
 <h2 id="nuget">NuGet 发布工作流</h2>
-<p>仓库今亦已具 <code>.github/workflows/publish-dotnet-tool.yml</code>，可将 CLI 以 <code>JekyllNet.Tool</code> 之 dotnet tool 包发布到 NuGet。</p>
+<p>仓库今亦已具 <code>.github/workflows/publish-dotnet-tool.yml</code>，可将 CLI 以 <code>JekyllNet.Tool</code> 之 dotnet tool 包同时发布到 NuGet.org 与 GitHub Packages。</p>
 <p>其所行者：</p>
 <ul>
 <li>于 <code>v*</code> tag 触发</li>
 <li>亦可手动触发，并显式输入版本号</li>
 <li>先行 <code>dotnet test</code></li>
 <li>再以解析后之版本执行 <code>dotnet pack</code>，不专赖项目文件中之固定版本字样</li>
-<li>以仓库 secret <code>NUGET_API_KEY</code> 推送至 NuGet</li>
+<li>以仓库 secret <code>NUGET_API_KEY</code> 推送至 NuGet.org</li>
+<li>并以 <code>GITHUB_TOKEN</code> 推送至 <code>https://nuget.pkg.github.com/&lt;owner&gt;/index.json</code></li>
 </ul>
 <h2 id="section-2">一条实用之例行</h2>
 <ol>

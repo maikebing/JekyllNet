@@ -56,7 +56,7 @@ jobs:
 
 ## NuGet 发布工作流
 
-仓库今亦已具 `.github/workflows/publish-dotnet-tool.yml`，可将 CLI 以 `JekyllNet.Tool` 之 dotnet tool 包发布到 NuGet。
+仓库今亦已具 `.github/workflows/publish-dotnet-tool.yml`，可将 CLI 以 `JekyllNet.Tool` 之 dotnet tool 包同时发布到 NuGet.org 与 GitHub Packages。
 
 其所行者：
 
@@ -64,7 +64,8 @@ jobs:
 - 亦可手动触发，并显式输入版本号
 - 先行 `dotnet test`
 - 再以解析后之版本执行 `dotnet pack`，不专赖项目文件中之固定版本字样
-- 以仓库 secret `NUGET_API_KEY` 推送至 NuGet
+- 以仓库 secret `NUGET_API_KEY` 推送至 NuGet.org
+- 并以 `GITHUB_TOKEN` 推送至 `https://nuget.pkg.github.com/<owner>/index.json`
 
 ## 一条实用之例行
 
