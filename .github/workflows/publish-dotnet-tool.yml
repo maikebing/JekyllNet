@@ -1,0 +1,90 @@
+name: publish-dotnet-tool
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "NuGet package version to publish, for example 0.1.1"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-dotnet-tool
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve package version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ github.event.inputs.version }}"
+          fi
+
+          if [ -z "$version" ]; then
+            echo "::error::Package version could not be determined."
+            exit 1
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Package version '$version' is not a valid SemVer-style NuGet version."
+            exit 1
+          fi
+
+          echo "package_version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved package version: $version"
+
+      - name: Restore
+        run: dotnet restore ./JekyllNet.slnx
+
+      - name: Test
+        run: dotnet test ./JekyllNet.slnx --configuration Release --no-restore
+
+      - name: Pack dotnet tool
+        run: >
+          dotnet pack ./JekyllNet.Cli/JekyllNet.Cli.csproj
+          --configuration Release
+          --no-restore
+          --output ./artifacts/nupkg
+          -p:Version=${{ steps.version.outputs.package_version }}
+
+      - name: Upload NuGet package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-tool-package-${{ steps.version.outputs.package_version }}
+          path: ./artifacts/nupkg
+
+      - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        shell: bash
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::Repository secret NUGET_API_KEY is required."
+            exit 1
+          fi
+
+          dotnet nuget push "./artifacts/nupkg/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate

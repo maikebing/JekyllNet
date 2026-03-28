@@ -27,7 +27,7 @@ The repository now also includes:
 
 - `dotnet tool` packaging metadata for the CLI
 - a reusable GitHub Action for site builds
-- GitHub Actions for CI and release artifacts
+- GitHub Actions for CI, GitHub Pages, NuGet publishing, and release artifacts
 - winget packaging templates
 - README guidance for installation and upgrades
 
@@ -53,6 +53,18 @@ jobs:
 The repository does not publish a dedicated action tag yet, so the example uses `@main` for now. Once the first action release exists, pin to that tag instead.
 
 The most useful inputs are `source`, `destination`, `drafts`, `future`, `unpublished`, `posts-per-page`, and the optional artifact upload controls.
+
+## NuGet publishing workflow
+
+The repository also now carries `.github/workflows/publish-dotnet-tool.yml` for publishing the CLI as the `JekyllNet.Tool` global tool package on NuGet.
+
+That workflow:
+
+- triggers on `v*` tags
+- also supports manual dispatch with an explicit version input
+- runs `dotnet test` before packing
+- packs with the resolved version instead of relying on the static project file version
+- pushes to NuGet with the repository secret `NUGET_API_KEY`
 
 ## A practical local routine
 

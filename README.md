@@ -117,6 +117,7 @@ GitHub 头像建议使用：
 - 📄 根目录 `action.yml`，可直接作为可复用 GitHub Action 使用
 - 📄 `.github/workflows/ci.yml`
 - 📄 `.github/workflows/github-pages.yml`
+- 📄 `.github/workflows/publish-dotnet-tool.yml`
 - 📄 `.github/workflows/release-artifacts.yml`
 
 用途：
@@ -124,6 +125,7 @@ GitHub 头像建议使用：
 - ⚙️ `action.yml`：在任意仓库中构建 JekyllNet 站点，并可选上传构建产物
 - ⚙️ `ci.yml`：测试、通过 action 构建 `docs` / `sample-site`、打包 dotnet tool
 - ⚙️ `github-pages.yml`：当 `docs` 或站点生成器相关代码变化时，构建 `docs` 并发布到 GitHub Pages
+- ⚙️ `publish-dotnet-tool.yml`：将 `JekyllNet.Tool` 作为 dotnet tool 包发布到 NuGet
 - ⚙️ `release-artifacts.yml`：生成 `nupkg` 与 Windows portable zip，便于 Release 和 `winget`
 
 最小 workflow 示例：
@@ -174,6 +176,23 @@ jobs:
 - `posts-per-page`
 - `upload-artifact`
 - `artifact-name`
+
+发布 dotnet tool 到 NuGet 可直接使用：
+
+- `.github/workflows/publish-dotnet-tool.yml`
+
+该 workflow 会：
+
+- 在推送 `v*` tag 时自动触发，并以 tag 去掉前导 `v` 后的值作为包版本
+- 在手动触发时使用输入的 `version`
+- 先执行 `dotnet test`
+- 再执行 `dotnet pack` 并发布到 `https://api.nuget.org/v3/index.json`
+- 使用仓库 secret `NUGET_API_KEY`
+
+示例：
+
+- 推送 tag `v0.1.1`
+- workflow 会发布 `JekyllNet.Tool` `0.1.1`
 
 ## 🪄 winget
 

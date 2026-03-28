@@ -27,7 +27,7 @@ dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 
 - `dotnet tool` 打包元数据
 - 可复用之 GitHub Action 构建入口
-- GitHub Actions 工作流
+- 用于 CI、GitHub Pages、NuGet 发布与 release artifacts 之 GitHub Actions 工作流
 - winget 模板
 - README 中之安装与升级说明
 
@@ -53,6 +53,18 @@ jobs:
 今仓库尚未另发 action 版本 tag，故示例暂用 `@main`；待首个 action release 既成，宜改钉其固定 tag。
 
 常用输入者，有 `source`、`destination`、`drafts`、`future`、`unpublished`、`posts-per-page`，以及可选之 artifact 上传配置。
+
+## NuGet 发布工作流
+
+仓库今亦已具 `.github/workflows/publish-dotnet-tool.yml`，可将 CLI 以 `JekyllNet.Tool` 之 dotnet tool 包发布到 NuGet。
+
+其所行者：
+
+- 于 `v*` tag 触发
+- 亦可手动触发，并显式输入版本号
+- 先行 `dotnet test`
+- 再以解析后之版本执行 `dotnet pack`，不专赖项目文件中之固定版本字样
+- 以仓库 secret `NUGET_API_KEY` 推送至 NuGet
 
 ## 一条实用之例行
 

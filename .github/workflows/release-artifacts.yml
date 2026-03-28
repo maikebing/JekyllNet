@@ -2,6 +2,11 @@ name: release-artifacts
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version override, for example 0.1.1"
+        required: false
+        type: string
   push:
     tags:
       - "v*"
@@ -22,8 +27,38 @@ jobs:
       - name: Restore
         run: dotnet restore ./JekyllNet.slnx
 
+      - name: Resolve package version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ github.event.inputs.version }}"
+          fi
+
+          if [ -z "$version" ]; then
+            echo "package_version=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "package_version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Pack dotnet tool
-        run: dotnet pack ./JekyllNet.Cli/JekyllNet.Cli.csproj --configuration Release --no-restore --output ./artifacts/nupkg
+        shell: bash
+        run: |
+          args=(
+            pack ./JekyllNet.Cli/JekyllNet.Cli.csproj
+            --configuration Release
+            --no-restore
+            --output ./artifacts/nupkg
+          )
+
+          if [ -n "${{ steps.version.outputs.package_version }}" ]; then
+            args+=(-p:Version=${{ steps.version.outputs.package_version }})
+          fi
+
+          dotnet "${args[@]}"
 
       - name: Publish Windows portable build
         run: dotnet publish ./JekyllNet.Cli/JekyllNet.Cli.csproj --configuration Release --no-restore --runtime win-x64 --self-contained true -p:PublishSingleFile=true -o ./artifacts/publish/win-x64
