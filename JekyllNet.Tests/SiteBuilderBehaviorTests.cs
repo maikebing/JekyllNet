@@ -707,8 +707,8 @@ public sealed class SiteBuilderBehaviorTests
             aiTranslationClient: new FakeAiTranslationClient());
         var translatedOutput = await File.ReadAllTextAsync(Path.Combine(outputDirectory, "fr", "index.html"));
 
-        Assert.Contains("<h1>fr::娆㈣繋</h1>", translatedOutput, StringComparison.Ordinal);
-        Assert.Contains("fr::浣犲ソ锛屼笘鐣屻€?, translatedOutput, StringComparison.Ordinal);
+        Assert.Contains("<h1>fr::欢迎</h1>", translatedOutput, StringComparison.Ordinal);
+        Assert.Contains("fr::你好，世界。", translatedOutput, StringComparison.Ordinal);
         Assert.Contains("fr::Terms of Service", translatedOutput, StringComparison.Ordinal);
         Assert.Contains("fr::Privacy Policy", translatedOutput, StringComparison.Ordinal);
         Assert.Contains("fr::Report Email", translatedOutput, StringComparison.Ordinal);

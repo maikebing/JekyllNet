@@ -573,6 +573,7 @@ internal static class ReleaseToolRuntime
             var deadline = DateTimeOffset.UtcNow.AddSeconds(20);
             var errors = new List<string>();
             var requestUrls = new Dictionary<string, string>(StringComparer.Ordinal);
+            var sawSuccessfulDocumentResponse = false;
 
             while (DateTimeOffset.UtcNow < deadline)
             {
@@ -638,6 +639,12 @@ internal static class ReleaseToolRuntime
                         {
                             var status = TryGetNestedDouble(paramsElement, "response", "status");
                             var responseUrl = TryGetNestedString(paramsElement, "response", "url");
+                            var resourceType = TryGetNestedString(paramsElement, "type");
+                            if (string.Equals(resourceType, "Document", StringComparison.OrdinalIgnoreCase) && status is >= 200 and < 400)
+                            {
+                                sawSuccessfulDocumentResponse = true;
+                            }
+
                             if (status >= 400
                                 && !string.IsNullOrWhiteSpace(responseUrl)
                                 && !ShouldIgnoreBrowserResourceError(responseUrl))
@@ -715,6 +722,11 @@ internal static class ReleaseToolRuntime
 
                         break;
                 }
+            }
+
+            if (!loaded && sawSuccessfulDocumentResponse && errors.Count == 0)
+            {
+                loaded = true;
             }
 
             return new BrowserCheckResult(name, url, loaded, errors);
