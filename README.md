@@ -14,7 +14,7 @@ JekyllNet 是一个基于 .NET 10 的静态站点生成器，面向希望保留 
 [![Website](https://img.shields.io/badge/site-jekyllnet.help-0f766e?style=flat-square)](https://jekyllnet.help)
 [![NuGet](https://img.shields.io/nuget/v/JekyllNet?style=flat-square&label=NuGet)](https://www.nuget.org/packages/JekyllNet)
 [![Downloads](https://img.shields.io/nuget/dt/JekyllNet?style=flat-square&label=Downloads)](https://www.nuget.org/packages/JekyllNet)
-[![Action v2](https://img.shields.io/badge/action-v2-2563eb?style=flat-square)](https://github.com/JekyllNet/action/tree/v2)
+[![Action v2.5](https://img.shields.io/badge/action-v2.5-2563eb?style=flat-square)](https://github.com/JekyllNet/action/tree/v2.5)
 [![CI](https://img.shields.io/github/actions/workflow/status/JekyllNet/JekyllNet/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/JekyllNet/JekyllNet/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/JekyllNet/JekyllNet?style=flat-square)](LICENSE)
 
@@ -34,9 +34,9 @@ JekyllNet 用 C# 重建 Jekyll / GitHub Pages 的常用行为，覆盖 front mat
 | Docs | [docs/](docs/) |
 | Roadmap | [ROADMAP.md](ROADMAP.md) |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
-| NuGet latest | [`0.2.0`](https://www.nuget.org/packages/JekyllNet/0.2.0) |
-| GitHub Action | [`JekyllNet/action@v2`](https://github.com/JekyllNet/action/tree/v2) |
-| Default Action CLI version | `0.2.0` |
+| NuGet latest | [`0.2.5`](https://www.nuget.org/packages/JekyllNet/0.2.5) |
+| GitHub Action | [`JekyllNet/action@v2.5`](https://github.com/JekyllNet/action/tree/v2.5) |
+| Default Action CLI version | `0.2.5` |
 | Runtime | `.NET 10` |
 
 ## Highlights | 亮点
@@ -47,7 +47,7 @@ JekyllNet 用 C# 重建 Jekyll / GitHub Pages 的常用行为，覆盖 front mat
 - Sass / SCSS 编译
 - AI 多语言翻译管线，支持 OpenAI、DeepSeek、Ollama 与 OpenAI-compatible 服务
 - `dotnet tool` 包分发
-- 可复用的 `JekyllNet/action@v2`
+- 可复用的 `JekyllNet/action@v2.5`
 - 中英文文档站、博客与新闻栏目
 
 ## Tested Themes | 已测试主题
@@ -59,6 +59,7 @@ JekyllNet 用 C# 重建 Jekyll / GitHub Pages 的常用行为，覆盖 front mat
 - [al-folio](https://github.com/JekyllNet/al-folio)
 - [jekyll-theme-chirpy](https://github.com/JekyllNet/jekyll-theme-chirpy)
 - [jekyll-TeXt-theme](https://github.com/kitian616/jekyll-TeXt-theme)
+- [jekyll-theme-lumen](https://github.com/JekyllNet/jekyll-theme-lumen)
 
 ## Quick Start | 快速开始
 
@@ -66,7 +67,7 @@ JekyllNet 用 C# 重建 Jekyll / GitHub Pages 的常用行为，覆盖 front mat
 
 ```bash
 # install
- dotnet tool install --global JekyllNet --version 0.2.0
+ dotnet tool install --global JekyllNet --version 0.2.5
 
 # build
  jekyllnet build --source ./my-site
@@ -89,12 +90,12 @@ dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 - [docs/en/](docs/en/)：English docs home
 - [docs/zh/blog/complete-usage-guide.md](docs/zh/blog/complete-usage-guide.md)：完整使用说明
 - [docs/en/blog/complete-usage-guide.md](docs/en/blog/complete-usage-guide.md)：Complete usage guide
-- [docs/zh/news/v0-2-0.md](docs/zh/news/v0-2-0.md)：v0.2.0 发布稿
-- [docs/en/news/v0-2-0.md](docs/en/news/v0-2-0.md)：v0.2.0 release note
+- [docs/zh/news/v0-2-5.md](docs/zh/news/v0-2-5.md)：v0.2.5 发布稿
+- [docs/en/news/v0-2-5.md](docs/en/news/v0-2-5.md)：v0.2.5 release note
 
 ## Action | GitHub Action
 
-`JekyllNet/action@v2` 已发布，默认安装 NuGet 上的 `JekyllNet 0.2.0`。
+`JekyllNet/action@v2.5` 已发布，默认安装 NuGet 上的 `JekyllNet 0.2.5`。
 
 最小 workflow 示例：
 
@@ -112,7 +113,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: JekyllNet/action@v2
+      - uses: JekyllNet/action@v2.5
         with:
           source: ./docs
           destination: ./artifacts/docs-site

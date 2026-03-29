@@ -8,17 +8,17 @@ nav_key: "news"
 intro:
   eyebrow: "Release Notes"
   title: "Project News"
-  description: "News is where major milestones land. v0.2.0 is now the latest update, with the original launch note preserved in history."
+  description: "News is where major milestones land. v0.2.5 is now the latest update, with earlier milestones preserved in history."
 sections:
   - title: "Latest entry"
-    description: "Start here for the v0.2.0 release announcement."
+    description: "Start here for the v0.2.5 release announcement."
     variant: "quick-links"
     columns: 2
     section_class: ""
     items:
-      - title: "JekyllNet v0.2.0 Released: Full Usage Guide and Documentation Overhaul"
-        description: "The current release highlights complete usage guidance and categorized docs improvements."
-        url: /en/news/v0-2-0/
+      - title: "JekyllNet v0.2.5 Released: Expanded Theme Compatibility and Unified Release Pipeline"
+        description: "The current release adds jekyll-theme-lumen support, stronger plugin and theme behavior, and unified Action / CLI versioning."
+        url: /en/news/v0-2-5/
       - title: "Back to docs home"
         description: "Return to the main docs portal and continue with setup or deep-dive reading."
         url: /en/
@@ -28,12 +28,15 @@ sections:
     columns: 2
     section_class: ""
     items:
+      - title: "v0.2.0 release note"
+        description: "The previous release announcement focused on documentation and onboarding improvements."
+        url: /en/news/v0-2-0/
       - title: "JekyllNet launch: docs, workflows, and compatibility baseline"
         description: "The March 25, 2026 first public milestone announcement."
         url: /en/news/project-status/
-      - title: "v0.2.0 release note"
+      - title: "v0.2.5 release note"
         description: "Current release announcement and promotion entry."
-        url: /en/news/v0-2-0/
+        url: /en/news/v0-2-5/
   - title: "Read next"
     description: "After the launch note, these pages explain the delivery in more detail."
     variant: "list"

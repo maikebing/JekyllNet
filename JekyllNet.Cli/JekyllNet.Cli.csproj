@@ -17,7 +17,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>jekyllnet</ToolCommandName>
     <PackageId>JekyllNet</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.5</Version>
     <Authors>JekyllNet</Authors>
     <Description>Jekyll-style static site generator and local docs server for .NET.</Description>
     <PackageTags>jekyll;github-pages;static-site-generator;dotnet-tool</PackageTags>

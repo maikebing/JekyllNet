@@ -23,7 +23,7 @@ dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 
 Recent improvements have made CLI output much more readable:
 
-- **Emoji status indicators**: ✅ for success, ❌ for errors, 🚀 for startup, 👀 for watching, 📝 for changes
+- **Emoji status indicators**: `✅` for success, `❌` for errors, `🚀` for startup, `👀` for watching, `📝` for changes
 - **Smart time formatting**: Shows `ms` for milliseconds, `s` for seconds, `mm:ss` for longer durations
 - **Multi-line format**: Easier to scan at a glance
 
@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: JekyllNet/action@v2
+      - uses: JekyllNet/action@v2.5
         with:
           source: ./docs
           destination: ./artifacts/docs-site
@@ -65,7 +65,7 @@ jobs:
           artifact-name: docs-site
 ```
 
-  The action now publishes the `v2` tag, which installs JekyllNet `0.2.0` by default.
+The action now publishes the `v2.5` tag, which installs JekyllNet `0.2.5` by default.
 
 The most useful inputs are `source`, `destination`, `drafts`, `future`, `unpublished`, `posts-per-page`, `dotnet-configuration`, and the optional artifact upload controls.
 
@@ -87,4 +87,3 @@ That workflow:
 1. Run `watch` against the site you are editing.
 2. Use `serve` when you want a stable preview URL.
 3. Run `dotnet test .\JekyllNet.slnx` before landing changes.
-

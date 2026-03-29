@@ -58,7 +58,7 @@ Use this skill when any of the following is requested:
 
 1. Build workflow
 
-- Ensure workflow uses `JekyllNet/action@v2`
+- Ensure workflow uses `JekyllNet/action@v2.5`
 - Ensure `source` and `destination` are explicit and consistent
 - For pages artifact workflow, upload correct destination folder
 

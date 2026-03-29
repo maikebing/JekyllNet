@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: JekyllNet/action@v2
+      - uses: JekyllNet/action@v2.5
         with:
           source: ./docs
           destination: ./artifacts/docs-site
@@ -60,7 +60,7 @@ jobs:
           artifact-name: docs-site
 ```
 
-  今 action 已发布 `v2` 标签，默认安装之 JekyllNet CLI 版本为 `0.2.0`。
+  今 action 已发布 `v2.5` 标签，默认安装之 JekyllNet CLI 版本为 `0.2.5`。
 
 ## 仓库内置之 Pages workflow
 

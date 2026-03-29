@@ -112,7 +112,7 @@ Use:
 
 ### 2) Build artifacts with GitHub Actions
 
-Use `JekyllNet/action@v2` to build and upload docs artifacts in CI.
+Use `JekyllNet/action@v2.5` to build and upload docs artifacts in CI.
 
 See:
 

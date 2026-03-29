@@ -93,7 +93,7 @@ sections:
       - label: "首发新闻"
         description: "观 2026 年 3 月 25 日里程碑所成。"
         url: /zh/news/project-status/
-      - label: "v0.2.0 发布新闻"
-        description: "观本轮文档体系升级与对外发布稿。"
-        url: /zh/news/v0-2-0/
+      - label: "v0.2.5 发布新闻"
+        description: "观本轮主题兼容增强与发布链路统一之发布稿。"
+        url: /zh/news/v0-2-5/
 ---

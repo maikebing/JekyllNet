@@ -112,7 +112,7 @@ JekyllNet 已具多语路线，可结合 AI 翻译做增量更新。
 
 ### 2) 用 GitHub Actions 构建产物
 
-可复用 `JekyllNet/action@v2` 在 CI 中构建并上传 `docs-site` artifact。
+可复用 `JekyllNet/action@v2.5` 在 CI 中构建并上传 `docs-site` artifact。
 
 详见：
 

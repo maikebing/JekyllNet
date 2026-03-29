@@ -4,6 +4,37 @@
 
 ## 🌟 [0.1.0] - 2026-03-25
 
+## 🌟 [0.2.5] - 2026-03-29
+
+此版本基于 `v0.2.0` 之后的所有变更整理，重点在于主题兼容面扩张、配置解析增强、插件与主题支持提升，以及发布链路版本统一。
+
+### ✨ Added
+
+- ✨ 新增 `jekyll-theme-lumen` 主题子模块，并纳入主题矩阵与兼容性范围
+- ✨ 新增 `jekyllnet-pages-subpath` 技能文档，沉淀 Pages 子路径构建经验
+- ✨ 新增 `v0.2.5` 中英双语发布新闻稿
+
+### 🛠️ Changed
+
+- 🛠️ 增强主题支持与插件架构，提升跨主题渲染与构建稳定性
+- 🛠️ `_config.yml` 加载后新增 `{{version}}` 占位符解析，兼容如 al-folio 等主题在 CDN URL 中的版本变量写法
+- 🛠️ 更新多个主题子模块引用，收敛 Pages 子路径与工作流清理后的兼容行为
+- 🛠️ 将 GitHub Action 默认 `tool-version` 提升到 `0.2.5`
+- 🛠️ 将文档与主题工作流中的 `JekyllNet/action` 引用统一提升到 `v2.5`
+- 🛠️ 将 CLI 包版本同步到 `0.2.5`
+
+### 📚 Docs
+
+- 📚 更新 `README.md` 与 profile 文档中的 NuGet / Action 版本信息
+- 📚 更新 GitHub Pages、CLI 工作流、完整使用说明中的 Action 示例版本
+- 📚 更新 docs 首页、导航、新闻索引中的“最新发布”入口，切换到 `v0.2.5`
+
+### ✅ Verified
+
+- ✅ `dotnet build .\JekyllNet.slnx`
+- ✅ 核心测试集 64 项全部通过
+- ✅ 主题子模块工作流中的 `JekyllNet/action` 版本引用已统一提升
+
 首发里程碑版本。
 
 ### ✨ Added

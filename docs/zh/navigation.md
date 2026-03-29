@@ -85,9 +85,9 @@ sections:
     columns: 1
     section_class: "panel panel-section"
     items:
-      - label: "v0.2.0 发布"
-        description: "本轮文档体系升级与宣传稿。"
-        url: /zh/news/v0-2-0/
+      - label: "v0.2.5 发布"
+        description: "本轮主题兼容增强、配置增强与版本统一发布稿。"
+        url: /zh/news/v0-2-5/
       - label: "首发新闻"
         description: "总览 2026 年 3 月 25 日此轮所成。"
         url: /zh/news/project-status/

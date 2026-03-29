@@ -5,18 +5,19 @@ namespace JekyllNet.Tests;
 public sealed class ReleaseToolRuntimeTests
 {
     [Fact]
-    public void ResolveThemeTargets_UsesDefaultFiveThemes_WhenSelectionIsEmpty()
+    public void ResolveThemeTargets_UsesDefaultSixThemes_WhenSelectionIsEmpty()
     {
         var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
 
         var targets = ReleaseToolRuntime.ResolveThemeTargets(repoRoot, null);
 
-        Assert.Equal(5, targets.Count);
+        Assert.Equal(6, targets.Count);
         Assert.Contains(targets, static target => target.Name == "jekyll-theme-chirpy");
         Assert.Contains(targets, static target => target.Name == "minimal-mistakes");
         Assert.Contains(targets, static target => target.Name == "al-folio");
         Assert.Contains(targets, static target => target.Name == "jekyll-TeXt-theme");
         Assert.Contains(targets, static target => target.Name == "just-the-docs");
+        Assert.Contains(targets, static target => target.Name == "jekyll-theme-lumen");
     }
 
     [Fact]

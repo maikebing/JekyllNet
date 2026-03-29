@@ -1,13 +1,13 @@
 ---
 title: "CLI 与开发工作流"
-description: "述 build、watch、serve、打包与 CI 于 JekyllNet 中之衔接。"
+description: "说明 build、watch、serve、打包与 CI 如何在 JekyllNet 中协同工作。"
 permalink: /zh/blog/cli-workflow/
 lang: "zh-CN"
 nav_key: "blog"
 ---
-吾今已有较完备之命令行工作流。盖静态生成器若仅能 build，而不能便于迭代、预览、打包与自动化，则其用未广。
+JekyllNet 现在已经具备更完整的命令行工作流。对一个静态站点生成器而言，这很重要，因为只有本地迭代、预览、打包和 CI 能顺畅衔接，整个工具链才真正可用。
 
-## 核心三令
+## 核心命令
 
 ```powershell
 dotnet run --project .\JekyllNet.Cli -- build --source .\sample-site
@@ -15,17 +15,17 @@ dotnet run --project .\JekyllNet.Cli -- watch --source .\docs
 dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 ```
 
-- `build`：定式生成之步
-- `watch`：适于文稿与模板反复修订
-- `serve`：适于稳定本地预览
+- `build` 是确定性的生成步骤。
+- `watch` 适合内容和模板的持续迭代。
+- `serve` 适合提供稳定的本地 HTTP 预览地址。
 
 ## 结构化日志输出
 
-近日之改进，使得 CLI 输出易读许多：
+最近的改进让 CLI 输出更易读：
 
-- **Emoji 状态标记**：✅ 成功、❌ 失败、🚀 启动、👀 监听、📝 变更
-- **智能时间格式**：`ms` 表毫秒、`s` 表秒、`mm:ss` 表分钟
-- **多行排版**：一览便知
+- **Emoji 状态标识**：`✅` 表示成功，`❌` 表示错误，`🚀` 表示启动，`👀` 表示监听，`📝` 表示变更
+- **智能时间格式**：短耗时显示 `ms`，秒级显示 `s`，更长耗时显示 `mm:ss`
+- **多行布局**：关键信息更容易快速扫读
 
 输出示例：
 
@@ -36,19 +36,19 @@ dotnet run --project .\JekyllNet.Cli -- serve --source .\docs --port 5055
 ✅ Rebuild complete (elapsed 00:00:01.234)
 ```
 
-## 打包与分发
+## 工具链与分发
 
-仓库今亦已具：
+仓库现在还包含：
 
-- `dotnet tool` 打包元数据
-- 可复用之 GitHub Action 构建入口
-- 用于 CI、GitHub Pages、NuGet 发布与 release artifacts 之 GitHub Actions 工作流
-- winget 模板
-- README 中之安装与升级说明
+- CLI 的 `dotnet tool` 打包元数据
+- 可复用的 GitHub Action 构建入口
+- 用于 CI、GitHub Pages、NuGet 发布和 release artifacts 的 GitHub Actions 工作流
+- winget 打包模板
+- README 中的安装与升级说明
 
-## 可复用之 GitHub Action
+## 可复用 GitHub Action
 
-今仓库根目录已可直接作为构建 action 为他仓所用，不必每次手写同样之 workflow 细节。
+现在，其他仓库可以直接使用独立的 `JekyllNet/action` 构建 action，而不必重复手写相同的 workflow 步骤。
 
 ```yml
 jobs:
@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: JekyllNet/action@v2
+      - uses: JekyllNet/action@v2.5
         with:
           source: ./docs
           destination: ./artifacts/docs-site
@@ -65,26 +65,25 @@ jobs:
           artifact-name: docs-site
 ```
 
-  今 action 已发布 `v2` 标签，默认安装之 JekyllNet CLI 版本为 `0.2.0`。
+该 action 现在发布 `v2.5` 标签，并默认安装 JekyllNet `0.2.5`。
 
-常用输入者，有 `source`、`destination`、`drafts`、`future`、`unpublished`、`posts-per-page`、`dotnet-configuration`，以及可选之 artifact 上传配置。
+最常用的输入包括 `source`、`destination`、`drafts`、`future`、`unpublished`、`posts-per-page`、`dotnet-configuration`，以及可选的 artifact 上传控制项。
 
 ## NuGet 发布工作流
 
-仓库今亦已具 `.github/workflows/publish-dotnet-tool.yml`，可将 CLI 以 `JekyllNet` 之 dotnet tool 包同时发布到 NuGet.org 与 GitHub Packages。
+仓库中还包含 `.github/workflows/publish-dotnet-tool.yml`，用于将 CLI 作为 `JekyllNet` 全局工具包同时发布到 NuGet.org 和 GitHub Packages。
 
-其所行者：
+该工作流：
 
-- 于 `v*` tag 触发
-- 亦可手动触发，并显式输入版本号
-- 先行 `dotnet test`
-- 再以解析后之版本执行 `dotnet pack`，不专赖项目文件中之固定版本字样
-- 以仓库 secret `NUGET_API_KEY` 推送至 NuGet.org
-- 并以 `GITHUB_TOKEN` 推送至 `https://nuget.pkg.github.com/JekyllNet/index.json`
+- 在 `v*` tag 上触发
+- 也支持手动触发，并显式传入版本号
+- 在打包前先执行 `dotnet test`
+- 使用解析后的版本执行 `dotnet pack`，而不是依赖项目文件中的静态版本号
+- 使用仓库 secret `NUGET_API_KEY` 推送到 NuGet.org
+- 同时使用 `GITHUB_TOKEN` 推送相同包到 `https://nuget.pkg.github.com/JekyllNet/index.json`
 
-## 一条实用之例行
+## 一条实用的本地例行流程
 
-1. 修站点时，常开 `watch`。
-2. 欲得稳定预览地址时，再开 `serve`。
-3. 提交前，行 `dotnet test .\JekyllNet.slnx`。
-
+1. 编辑站点时，先运行 `watch`。
+2. 需要稳定预览地址时，再运行 `serve`。
+3. 合入改动前，执行 `dotnet test .\JekyllNet.slnx`。

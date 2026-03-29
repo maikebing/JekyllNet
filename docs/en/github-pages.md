@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: JekyllNet/action@v2
+      - uses: JekyllNet/action@v2.5
         with:
           source: ./docs
           destination: ./artifacts/docs-site
@@ -62,7 +62,7 @@ jobs:
           artifact-name: docs-site
 ```
 
-  The action now publishes the `v2` tag, which installs JekyllNet `0.2.0` by default.
+  The action now publishes the `v2.5` tag, which installs JekyllNet `0.2.5` by default.
 
 ## Built-in Pages workflow in this repository
 

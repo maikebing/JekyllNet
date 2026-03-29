@@ -85,9 +85,9 @@ sections:
     columns: 1
     section_class: "panel panel-section"
     items:
-      - label: "v0.2.0 release"
-        description: "The latest release announcement with links to official project entry points."
-        url: /en/news/v0-2-0/
+      - label: "v0.2.5 release"
+        description: "The latest release announcement with theme support, config, and release pipeline updates."
+        url: /en/news/v0-2-5/
       - label: "Launch announcement"
         description: "The first-release news post summarizes what shipped on March 25, 2026."
         url: /en/news/project-status/

@@ -93,7 +93,7 @@ sections:
       - label: "Launch announcement"
         description: "What shipped in the first public milestone on March 25, 2026."
         url: /en/news/project-status/
-      - label: "v0.2.0 release note"
-        description: "The latest release update with official project links and adoption guidance."
-        url: /en/news/v0-2-0/
+      - label: "v0.2.5 release note"
+        description: "The latest release update covering theme support growth and release pipeline unification."
+        url: /en/news/v0-2-5/
 ---
