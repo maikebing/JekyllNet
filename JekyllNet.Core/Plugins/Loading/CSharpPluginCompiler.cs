@@ -14,6 +14,7 @@ internal static class CSharpPluginCompiler
 {
     // Framework + JekyllNet.Core assemblies needed for plugin compilation
     private static readonly IReadOnlyList<MetadataReference> _baseReferences = BuildBaseReferences();
+    private static readonly IReadOnlyDictionary<string, string> _trustedPlatformAssemblies = BuildTrustedPlatformAssemblyMap();
 
     /// <summary>
     /// Compiles <paramref name="sourceCode"/> and reflects all
@@ -58,25 +59,54 @@ internal static class CSharpPluginCompiler
     private static IReadOnlyList<MetadataReference> BuildBaseReferences()
     {
         var refs = new List<MetadataReference>();
+        var added = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // .NET runtime assemblies
-        var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-        foreach (var dll in new[] { "System.Runtime.dll", "System.Collections.dll", "System.Linq.dll",
-                                     "System.Net.Http.dll", "System.Text.RegularExpressions.dll",
-                                     "System.Text.Json.dll", "netstandard.dll" })
+        // Resolve compile-time references from trusted platform assemblies so single-file apps are supported.
+        foreach (var assemblyFile in new[]
+                 {
+                     "System.Runtime.dll",
+                     "System.Collections.dll",
+                     "System.Linq.dll",
+                     "System.Net.Http.dll",
+                     "System.Text.RegularExpressions.dll",
+                     "System.Text.Json.dll",
+                     "System.Private.CoreLib.dll",
+                     "netstandard.dll",
+                     typeof(IJekyllPlugin).Assembly.GetName().Name + ".dll"
+                 })
         {
-            var path = Path.Combine(runtimeDir, dll);
-            if (File.Exists(path))
-                refs.Add(MetadataReference.CreateFromFile(path));
+            AddReferenceIfPresent(refs, added, assemblyFile);
         }
 
-        // mscorlib / System.Private.CoreLib
-        refs.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
-        refs.Add(MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location));
-
-        // JekyllNet.Core itself (so plugins can implement our interfaces)
-        refs.Add(MetadataReference.CreateFromFile(typeof(IJekyllPlugin).Assembly.Location));
-
         return refs;
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildTrustedPlatformAssemblyMap()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var tpa = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+        if (string.IsNullOrWhiteSpace(tpa))
+        {
+            return map;
+        }
+
+        foreach (var path in tpa.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            map[Path.GetFileName(path)] = path;
+        }
+
+        return map;
+    }
+
+    private static void AddReferenceIfPresent(List<MetadataReference> references, HashSet<string> added, string assemblyFile)
+    {
+        if (!_trustedPlatformAssemblies.TryGetValue(assemblyFile, out var path)
+            || !added.Add(path)
+            || !File.Exists(path))
+        {
+            return;
+        }
+
+        references.Add(MetadataReference.CreateFromFile(path));
     }
 }
