@@ -42,12 +42,19 @@ internal static class CliRuntime
             await builder.BuildAsync(ToSiteOptions(settings, output), cancellationToken);
             await WriteGitHubOutputAsync(settings, cancellationToken);
             stopwatch.Stop();
-            await output.WriteLineAsync($"Build complete: {settings.DestinationDirectory} (elapsed {stopwatch.Elapsed:hh\\:mm\\:ss\\.fff})");
+            var elapsed = FormatElapsedTime(stopwatch.Elapsed);
+            await output.WriteLineAsync();
+            await output.WriteLineAsync("✅ Build Complete");
+            await output.WriteLineAsync($"   Output Directory: {settings.DestinationDirectory}");
+            await output.WriteLineAsync($"   Time Elapsed: {elapsed}");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             stopwatch.Stop();
-            await output.WriteLineAsync($"Build failed after {stopwatch.Elapsed:hh\\:mm\\:ss\\.fff}: {ex.Message}");
+            var elapsed = FormatElapsedTime(stopwatch.Elapsed);
+            await output.WriteLineAsync();
+            await output.WriteLineAsync($"❌ Build Failed ({elapsed})");
+            await output.WriteLineAsync($"   {ex.Message}");
             throw;
         }
     }
@@ -55,7 +62,9 @@ internal static class CliRuntime
     public static async Task WatchAsync(BuildCommandSettings settings, TextWriter output, CancellationToken cancellationToken)
     {
         await BuildOnceAsync(settings, output, cancellationToken);
-        await output.WriteLineAsync($"Watching for changes: {settings.SourceDirectory}");
+        await output.WriteLineAsync();
+        await output.WriteLineAsync("👀 Watching for Changes");
+        await output.WriteLineAsync($"   Source Directory: {settings.SourceDirectory}");
         await RunWatchLoopAsync(settings, output, cancellationToken);
     }
 
@@ -75,10 +84,13 @@ internal static class CliRuntime
         ConfigureStaticSiteMiddleware(app, settings.Build.DestinationDirectory);
 
         await app.StartAsync(cancellationToken);
-        await output.WriteLineAsync($"Serving {settings.Build.DestinationDirectory} at {BuildDisplayUrl(settings.Host, settings.Port)}");
+        await output.WriteLineAsync();
+        await output.WriteLineAsync("🚀 Server Started");
+        await output.WriteLineAsync($"   Output: {settings.Build.DestinationDirectory}");
+        await output.WriteLineAsync($"   URL: {BuildDisplayUrl(settings.Host, settings.Port)}");
         if (settings.Watch)
         {
-            await output.WriteLineAsync("Watch mode is enabled.");
+            await output.WriteLineAsync("   Watch: Enabled");
         }
 
         try
@@ -215,12 +227,13 @@ internal static class CliRuntime
 
                     try
                     {
-                        await output.WriteLineAsync($"Change detected: {changedPath}");
+                        await output.WriteLineAsync();
+                        await output.WriteLineAsync($"📝 Change Detected: {changedPath}");
                         await BuildOnceAsync(settings, output, cancellationToken);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {
-                        await output.WriteLineAsync($"Build failed: {ex.Message}");
+                        await output.WriteLineAsync($"   Error: {ex.Message}");
                     }
                 }
             }
@@ -308,4 +321,19 @@ internal static class CliRuntime
 
     private static string BuildDisplayUrl(string host, int port)
         => $"http://{(string.Equals(host, "0.0.0.0", StringComparison.Ordinal) ? "localhost" : host)}:{port}";
+
+    private static string FormatElapsedTime(TimeSpan elapsed)
+    {
+        if (elapsed.TotalSeconds < 1)
+        {
+            return $"{elapsed.TotalMilliseconds:F0}ms";
+        }
+
+        if (elapsed.TotalSeconds < 60)
+        {
+            return $"{elapsed.TotalSeconds:F2}s";
+        }
+
+        return $"{elapsed:hh\\:mm\\:ss}";
+    }
 }
