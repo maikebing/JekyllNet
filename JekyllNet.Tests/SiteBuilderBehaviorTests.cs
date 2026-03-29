@@ -651,6 +651,8 @@ public sealed class SiteBuilderBehaviorTests
         var sourceDirectory = TestInfrastructure.CreateSiteFixture(new Dictionary<string, string>
         {
             ["assets/css/main.scss"] = """
+                ---
+                ---
                 $brand: #123456
                 body { color: $brand; }
                 """
@@ -1169,6 +1171,8 @@ public sealed class SiteBuilderBehaviorTests
                 body { color: red; }
                 """,
             ["assets/css/main.scss"] = """
+                ---
+                ---
                 @import "theme";
                 """,
             ["docs/_config.yml"] = """
