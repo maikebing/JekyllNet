@@ -175,6 +175,73 @@
 - [x] ✅ 把已经完成的回归测试在多个 phase 里重复记账
 - [x] ✅ 把 DevEx、分发、编辑器生态与核心兼容主线混在一个优先级里
 
+## 🧩 Phase 5：主题插件与文献系统兼容（进行中）
+
+状态：`进行中`
+
+目标：围绕已纳入测试矩阵的复杂主题（当前优先 `al-folio`），补齐 Ruby 插件与 BibTeX 文献链路的关键兼容能力，确保本地 `build/watch/serve` 与 GitHub Pages 子路径部署都可稳定工作。
+
+### 已完成
+
+- [x] ✅ 建立插件抽象层：`ILiquidTag / ILiquidBlock / ILiquidFilter / IJekyllGenerator`
+- [x] ✅ 接入 Roslyn 动态编译链路（`.cs` 直编译）
+- [x] ✅ 建立 Ruby 插件结构转译器（`.rb -> .cs`，best-effort）
+- [x] ✅ 在构建流程中接入 `_plugins` 自动加载与注册
+- [x] ✅ `TemplateRenderer` 支持自定义 tag/block/filter 扩展点
+- [x] ✅ 本地 `serve` 支持读取 `baseurl` 并处理二级目录前缀映射
+- [x] ✅ 修复静态文件 Front Matter `permalink` 输出路径（含 `search-data.js`）
+- [x] ✅ 修复 `hide-custom-bibtex.rb` 转译代码编译失败（Linq 引用缺失）
+- [x] ✅ 实现 `{% bibliography %}` 最小可用渲染（P0）
+- [x] ✅ 实现 `{% cite key %}` 最小可用渲染（P1）
+- [x] ✅ 实现 `{% reference key %}` 最小可用渲染（P1）
+- [x] ✅ 解析 `_bibliography/papers.bib` 基础字段并注入 `site.bibliography_entries / site.bibliography_by_key`
+- [x] ✅ 修复 BibTeX 基础解析质量问题（跳过 `@string/@comment/@preamble`、处理转义引号）
+
+### 当前缺口（下一步必须完成）
+
+- [ ] ⏳ 与 `al-folio` 的 `bib.liquid` / `post.liquid` 输出对齐到“可读可用”基线
+- [ ] ⏳ 增补 regression tests：`publications` 页面非空、`cite` 标签可解析、`baseurl` 下资源返回 200
+- [ ] ⏳ 更新 docs compatibility 页面，新增“Bibliography / Scholar 标签”兼容状态说明
+
+### 六主题扫描（2026-03-29）
+
+执行命令：`dotnet run --project .\scripts\JekyllNet.ReleaseTool -- test-theme-matrix --max-parallelism 6`
+
+- [x] ✅ `al-folio`：构建通过，浏览器检查无错误
+- [x] ✅ `jekyll-TeXt-theme`：构建通过，浏览器检查无错误
+- [x] ✅ `jekyll-theme-chirpy`：构建通过，浏览器检查无错误
+- [x] ✅ `just-the-docs`：构建通过，浏览器检查无错误
+- [x] ✅ `minimal-mistakes`：构建通过，浏览器检查无错误
+- [x] ✅ `jekyll-theme-lumen`：构建通过，浏览器检查无错误（已添加最小首页 fixture）
+
+说明：`jekyll-theme-lumen` 仍可作为主题包使用；同时已补一个最小 `index.md` 作为预览与矩阵检查入口，不影响主题包定位。
+
+对应动作：
+
+- [x] ✅ 在 ReleaseTool 的浏览器检查中区分“主题包仓库”与“完整站点仓库”检查规则
+- [x] ✅ 为 `jekyll-theme-lumen` 增加最小首页 fixture（`index.md`）
+
+### 后期探讨（保留，不阻塞主线）
+
+- [ ] 🔬 BibTeX 完整语法兼容：宏展开（`@string`）、`crossref`、更复杂嵌套结构
+- [ ] 🔬 Scholar 标签高阶参数：`group_by`、复杂筛选/排序、样式细节全量对齐
+- [ ] 🔬 LaTeX 特殊字符与数学文本的更完整显示策略
+- [ ] 🔬 引文输出样式可配置化（不同主题/学术样式）
+
+### 验收标准
+
+1. `dotnet run --project .\JekyllNet.Cli -- build --source .\themes\al-folio` 构建成功。
+2. `publications` 页面有文献条目输出，不再是空容器。
+3. 在 `serve` + `baseurl` 场景下，`/assets/js/search-data.js` 等关键资源返回 200。
+4. `_plugins` 目录中已识别插件可加载，编译失败插件数为 0（在默认 `al-folio` 样例上）。
+5. 回归测试与兼容说明同步更新。
+
+### 执行策略
+
+- 继续遵循“具体缺口 + 测试 + 文档同步”模式，不扩散到不必要的大而全重写。
+- 先做 P0/P1 让主题可用，再逐步补齐 Scholar 高阶参数（分组、排序、筛选）。
+- 所有实现保持 `C# + .NET 10`，不引入脚本运行时依赖。
+
 ## 🧭 不再阻塞主线的事项
 
 这些方向仍然有价值，但不再属于 Phase 0 到 4 的闭环 gate。

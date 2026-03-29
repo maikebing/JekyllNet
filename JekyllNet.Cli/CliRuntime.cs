@@ -8,6 +8,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using JekyllNet.Core.Models;
 using JekyllNet.Core.Services;
+using System.Text.RegularExpressions;
 
 namespace JekyllNet.Cli;
 
@@ -73,6 +74,8 @@ internal static class CliRuntime
     {
         await BuildOnceAsync(settings.Build, output, cancellationToken);
 
+        var configuredBasePath = ReadConfiguredBasePath(settings.Build.SourceDirectory);
+
         using var watchCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var watchTask = settings.Watch
             ? RunWatchLoopAsync(settings.Build, output, watchCancellation.Token)
@@ -82,16 +85,21 @@ internal static class CliRuntime
         webBuilder.WebHost.UseUrls(BuildListenUrl(settings.Host, settings.Port));
 
         var app = webBuilder.Build();
-        ConfigureStaticSiteMiddleware(app, settings.Build.DestinationDirectory);
+        ConfigureStaticSiteMiddleware(app, settings.Build.DestinationDirectory, configuredBasePath);
 
         await app.StartAsync(cancellationToken);
         await output.WriteLineAsync();
         await output.WriteLineAsync("🚀 Server Started");
         await output.WriteLineAsync($"   Output: {settings.Build.DestinationDirectory}");
-        await output.WriteLineAsync($"   URL: {BuildDisplayUrl(settings.Host, settings.Port)}");
+        await output.WriteLineAsync($"   URL: {BuildDisplayUrl(settings.Host, settings.Port)}{configuredBasePath}/");
         if (settings.Watch)
         {
             await output.WriteLineAsync("   Watch: Enabled");
+        }
+
+        if (!string.IsNullOrEmpty(configuredBasePath))
+        {
+            await output.WriteLineAsync($"   Base Path: {configuredBasePath}");
         }
 
         try
@@ -244,11 +252,30 @@ internal static class CliRuntime
         }
     }
 
-    private static void ConfigureStaticSiteMiddleware(WebApplication app, string siteRoot)
+    private static void ConfigureStaticSiteMiddleware(WebApplication app, string siteRoot, string configuredBasePath)
     {
         var fileProvider = new PhysicalFileProvider(siteRoot);
         var contentTypeProvider = new FileExtensionContentTypeProvider();
         contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
+
+        if (!string.IsNullOrEmpty(configuredBasePath))
+        {
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Path == "/")
+                {
+                    context.Response.Redirect(configuredBasePath + "/", permanent: false);
+                    return;
+                }
+
+                if (context.Request.Path.StartsWithSegments(configuredBasePath, out var remainder))
+                {
+                    context.Request.Path = remainder.HasValue ? remainder : "/";
+                }
+
+                await next(context);
+            });
+        }
 
         app.Use(async (context, next) =>
         {
@@ -293,6 +320,42 @@ internal static class CliRuntime
 
             await context.Response.WriteAsync("Not Found", context.RequestAborted);
         });
+    }
+
+    private static string ReadConfiguredBasePath(string sourceDirectory)
+    {
+        var rootConfigPath = Path.Combine(sourceDirectory, "_config.yml");
+        if (!File.Exists(rootConfigPath))
+        {
+            return string.Empty;
+        }
+
+        var content = File.ReadAllText(rootConfigPath);
+        var match = Regex.Match(content, @"(?m)^\s*baseurl\s*:\s*(?<value>.*)$", RegexOptions.CultureInvariant);
+        if (!match.Success)
+        {
+            return string.Empty;
+        }
+
+        var value = match.Groups["value"].Value;
+        var hashIndex = value.IndexOf('#');
+        if (hashIndex >= 0)
+        {
+            value = value[..hashIndex];
+        }
+
+        value = value.Trim().Trim('"', '\'');
+        if (string.IsNullOrWhiteSpace(value) || value == "/")
+        {
+            return string.Empty;
+        }
+
+        if (!value.StartsWith('/'))
+        {
+            value = "/" + value;
+        }
+
+        return value.TrimEnd('/');
     }
 
     private static bool ShouldIgnoreWatchPath(string fullPath, BuildCommandSettings settings)

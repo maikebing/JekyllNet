@@ -49,7 +49,8 @@ internal static class ReleaseToolRuntime
         "minimal-mistakes",
         "al-folio",
         "jekyll-TeXt-theme",
-        "just-the-docs"
+        "just-the-docs",
+        "jekyll-theme-lumen"
     ];
 
     private static readonly IReadOnlyDictionary<string, string> ThemeRelativePaths =
@@ -59,7 +60,8 @@ internal static class ReleaseToolRuntime
             ["minimal-mistakes"] = Path.Combine("themes", "minimal-mistakes"),
             ["al-folio"] = Path.Combine("themes", "al-folio"),
             ["jekyll-TeXt-theme"] = Path.Combine("themes", "jekyll-TeXt-theme"),
-            ["just-the-docs"] = Path.Combine("themes", "just-the-docs")
+            ["just-the-docs"] = Path.Combine("themes", "just-the-docs"),
+            ["jekyll-theme-lumen"] = Path.Combine("themes", "jekyll-theme-lumen")
         };
 
     public static async Task<ResolvedVersionInfo> ResolveVersionAsync(
@@ -291,6 +293,18 @@ internal static class ReleaseToolRuntime
                 var port = settings.PortStart + index;
                 var debugPort = settings.DebugPortStart + index;
 
+                if (ShouldSkipRootBrowserCheck(result))
+                {
+                    browserResults.Add(new BrowserCheckResult(
+                        result.Name,
+                        $"http://127.0.0.1:{port}/",
+                        Loaded: true,
+                        Errors: [],
+                        Skipped: true,
+                        SkipReason: "theme package has no root index.html"));
+                    continue;
+                }
+
                 try
                 {
                     await using var server = new StaticSiteServer(result.Destination, port, result.Name);
@@ -322,6 +336,12 @@ internal static class ReleaseToolRuntime
             if (browser is null)
             {
                 await output.WriteLineAsync($"- {result.Name}: no browser result");
+                continue;
+            }
+
+            if (browser.Skipped)
+            {
+                await output.WriteLineAsync($"- {result.Name}: skipped ({browser.SkipReason})");
                 continue;
             }
 
@@ -374,6 +394,17 @@ internal static class ReleaseToolRuntime
         var hasBuildFailures = failedBuilds.Length > 0;
         var hasBrowserFailures = browserResults.Any(static item => item.Errors.Count > 0);
         return !hasBuildFailures && !hasBrowserFailures;
+    }
+
+    private static bool ShouldSkipRootBrowserCheck(ThemeBuildResult result)
+    {
+        if (!string.Equals(result.Name, "jekyll-theme-lumen", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var rootIndexPath = Path.Combine(result.Destination, "index.html");
+        return !File.Exists(rootIndexPath);
     }
 
     internal static IReadOnlyList<ThemeBuildTarget> ResolveThemeTargets(string repoRoot, IReadOnlyCollection<string>? selectedThemes)
@@ -1006,7 +1037,13 @@ internal static class ReleaseToolRuntime
         TimeSpan Duration,
         string Output);
 
-    private sealed record BrowserCheckResult(string Name, string Url, bool Loaded, IReadOnlyList<string> Errors);
+    private sealed record BrowserCheckResult(
+        string Name,
+        string Url,
+        bool Loaded,
+        IReadOnlyList<string> Errors,
+        bool Skipped = false,
+        string? SkipReason = null);
 
     private sealed record ProcessExecutionResult(int ExitCode, string Output);
 

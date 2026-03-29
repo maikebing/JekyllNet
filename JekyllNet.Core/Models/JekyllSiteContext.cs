@@ -21,4 +21,11 @@ public sealed class JekyllSiteContext
     public required List<JekyllStaticFile> StaticFiles { get; init; }
 
     public required GitHubPagesCompatibilityOptions Compatibility { get; init; }
+
+    /// <summary>
+    /// Additional content items injected by <see cref="JekyllNet.Core.Plugins.IJekyllGenerator"/>
+    /// implementations. These are merged into <see cref="Posts"/> / <see cref="Collections"/>
+    /// before the main rendering pass begins.
+    /// </summary>
+    public List<JekyllContentItem> ExtraItems { get; } = [];
 }

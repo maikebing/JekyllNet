@@ -172,7 +172,7 @@ static Command CreateTestThemeMatrixCommand()
 {
     var themesOption = new Option<string[]>("--themes")
     {
-        Description = "Theme names to build and validate. Defaults to the standard 5-theme matrix."
+        Description = "Theme names to build and validate. Defaults to the standard 6-theme matrix."
     };
     themesOption.AllowMultipleArgumentsPerToken = true;
 

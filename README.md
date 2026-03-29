@@ -149,7 +149,7 @@ dotnet run --project .\scripts\JekyllNet.ReleaseTool -- test-theme-matrix --max-
 
 说明：
 
-- 主题矩阵会覆盖 `just-the-docs`、`minimal-mistakes`、`al-folio`、`jekyll-theme-chirpy`、`jekyll-TeXt-theme`
+- 主题矩阵会覆盖 `just-the-docs`、`minimal-mistakes`、`al-folio`、`jekyll-theme-chirpy`、`jekyll-TeXt-theme`、`jekyll-theme-lumen`
 - `serve` / `watch` 已支持更易读的结构化日志输出
 - 文档站 `docs/` 同时也是构建回归 fixture 之一
 
